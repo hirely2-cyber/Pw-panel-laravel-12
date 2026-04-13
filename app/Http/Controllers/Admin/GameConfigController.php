@@ -1,0 +1,113 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Services\DeliveryProtocol;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class GameConfigController extends Controller
+{
+    public function index(): View
+    {
+        return view('admin.game-config');
+    }
+
+    /**
+     * AJAX: Fetch all game attributes + max online info.
+     */
+    public function fetch(): JsonResponse
+    {
+        try {
+            $proto = new DeliveryProtocol();
+
+            $attributes = $proto->getAllAttributes();
+            $maxOnline  = $proto->getMaxOnline();
+
+            return response()->json([
+                'ok'         => true,
+                'attributes' => $attributes,
+                'maxOnline'  => $maxOnline,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'ok'         => false,
+                'offline'    => true,
+                'error'      => 'Server game sedang offline. Nyalakan PW Server untuk mengatur konfigurasi.',
+                'attributes' => [],
+                'maxOnline'  => null,
+            ]);
+        }
+    }
+
+    /**
+     * AJAX: Toggle a boolean game attribute.
+     */
+    public function toggleAttribute(Request $request): JsonResponse
+    {
+        $request->validate([
+            'attribute' => 'required|integer',
+            'value'     => 'required|integer|in:0,1',
+        ]);
+
+        try {
+            $proto  = new DeliveryProtocol();
+            $result = $proto->setGameAttribute((int) $request->attribute, (int) $request->value);
+
+            if ($result) {
+                return response()->json(['ok' => true]);
+            }
+            return response()->json(['ok' => false, 'error' => 'Server menolak perubahan.']);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'offline' => true, 'error' => 'Server game sedang offline.']);
+        }
+    }
+
+    /**
+     * AJAX: Set a numeric attribute (double_exp, lambda).
+     */
+    public function setAttribute(Request $request): JsonResponse
+    {
+        $request->validate([
+            'attribute' => 'required|integer',
+            'value'     => 'required|integer|min:0|max:255',
+        ]);
+
+        try {
+            $proto  = new DeliveryProtocol();
+            $result = $proto->setGameAttribute((int) $request->attribute, (int) $request->value);
+
+            if ($result) {
+                return response()->json(['ok' => true]);
+            }
+            return response()->json(['ok' => false, 'error' => 'Server menolak perubahan.']);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'offline' => true, 'error' => 'Server game sedang offline.']);
+        }
+    }
+
+    /**
+     * AJAX: Set max online users.
+     */
+    public function setMaxOnline(Request $request): JsonResponse
+    {
+        $request->validate([
+            'maxnum'      => 'required|integer|min:1|max:99999',
+            'fake_maxnum' => 'required|integer|min:0|max:99999',
+        ]);
+
+        try {
+            $proto  = new DeliveryProtocol();
+            $result = $proto->setMaxOnline((int) $request->maxnum, (int) $request->fake_maxnum);
+
+            if ($result) {
+                return response()->json(['ok' => true]);
+            }
+            return response()->json(['ok' => false, 'error' => 'Server menolak perubahan.']);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'offline' => true, 'error' => 'Server game sedang offline.']);
+        }
+    }
+}

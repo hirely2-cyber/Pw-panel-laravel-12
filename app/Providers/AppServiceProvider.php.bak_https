@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Providers;
+
+use App\Models\Setting;
+use Carbon\Carbon;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        //
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        Carbon::setLocale('id');
+        setlocale(LC_TIME, 'id_ID', 'id_ID.UTF-8', 'id');
+
+        // Override feature toggles from DB (so admin can toggle without editing .env)
+        try {
+            $features = ['shop', 'donate', 'voucher', 'ranking', 'vote', 'service', 'news', 'register'];
+            foreach ($features as $key) {
+                $val = Setting::get('feature_' . $key);
+                if ($val !== null) {
+                    config(['pw-config.features.' . $key => $val === '1']);
+                }
+            }
+            $cubiVal = Setting::get('feature_cubi_shop');
+            if ($cubiVal !== null) {
+                config(['pw-config.cubi_shop.enabled' => $cubiVal === '1']);
+            }
+        } catch (\Throwable $e) {
+            // DB not ready (first install, migration, etc.) — silently skip
+        }
+    }
+}

@@ -1,0 +1,112 @@
+<?php
+
+/*
+ * @author   Wahyu Suhandi <andietz.orion@gmail.com>
+ * @link     https://wa.me/6208118719377
+ * @project  Perfect World Panel
+ * @version  2.0.0
+ * @license  MIT
+ */
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\News;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
+
+class NewsController extends Controller
+{
+    public function index(): View
+    {
+        $news = News::latest()->paginate(20);
+        return view('admin.news.index', compact('news'));
+    }
+
+    public function create(): View
+    {
+        return view('admin.news.form', ['news' => new News()]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        \Log::info("NEWS STORE REQUEST", [
+            "all_input" => $request->except("_token"),
+            "has_content" => $request->has("content"),
+            "content_length" => strlen($request->input("content", "")),
+            "category" => $request->input("category"),
+            "title" => $request->input("title"),
+        ]);
+        $data = $request->validate([
+            'title'        => ['required', 'string', 'max:255'],
+            'content'      => ['required', 'string'],
+            'category'     => ['required', 'string', 'max:50'],
+            'tags'         => ['nullable', 'string'],
+            'thumbnail'    => ['nullable', 'image', 'max:2048'],
+            'is_published' => ['boolean'],
+        ]);
+
+        $data['slug']         = Str::slug($data['title']) . '-' . now()->format('ymdHis');
+        $data['author_id']    = auth()->id();
+        $data['is_published'] = $request->boolean('is_published', true);
+
+        // Process tags: convert comma-separated string to array
+        if (!empty($data['tags'])) {
+            $data['tags'] = array_map('trim', explode(',', $data['tags']));
+            $data['tags'] = array_filter($data['tags']); // Remove empty values
+        } else {
+            $data['tags'] = [];
+        }
+
+        if ($request->hasFile('thumbnail')) {
+            $data['thumbnail'] = $request->file('thumbnail')->store('news', 'public');
+        }
+
+        News::create($data);
+
+        return redirect()->route('admin.news.index')->with('success', 'Berita berhasil ditambahkan.');
+    }
+
+    public function edit(News $news): View
+    {
+        return view('admin.news.form', compact('news'));
+    }
+
+    public function update(Request $request, News $news): RedirectResponse
+    {
+        $data = $request->validate([
+            'title'        => ['required', 'string', 'max:255'],
+            'content'      => ['required', 'string'],
+            'category'     => ['required', 'string', 'max:50'],
+            'tags'         => ['nullable', 'string'],
+            'thumbnail'    => ['nullable', 'image', 'max:2048'],
+            'is_published' => ['boolean'],
+        ]);
+
+        $data['is_published'] = $request->boolean('is_published', true);
+
+        // Process tags: convert comma-separated string to array
+        if (!empty($data['tags'])) {
+            $data['tags'] = array_map('trim', explode(',', $data['tags']));
+            $data['tags'] = array_filter($data['tags']); // Remove empty values
+        } else {
+            $data['tags'] = [];
+        }
+
+        if ($request->hasFile('thumbnail')) {
+            $data['thumbnail'] = $request->file('thumbnail')->store('news', 'public');
+        }
+
+        $news->update($data);
+
+        return redirect()->route('admin.news.index')->with('success', 'Berita berhasil diperbarui.');
+    }
+
+    public function destroy(News $news): RedirectResponse
+    {
+        $news->delete();
+        return redirect()->route('admin.news.index')->with('success', 'Berita dihapus.');
+    }
+}
