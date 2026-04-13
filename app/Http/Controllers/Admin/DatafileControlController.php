@@ -23,6 +23,7 @@ class DatafileControlController extends Controller
     ];
 
     private const DEFAULT_SCRIPT = '/home/pw_server155/tools/replace_datafile.sh';
+    private const DEFAULT_NPCGEN_SCRIPT = '/home/pw_server155/tools/replace_npcgen.sh';
 
     private function serverPath(): string
     {
@@ -45,6 +46,17 @@ class DatafileControlController extends Controller
         return $stored !== '' ? $stored : self::DEFAULT_SCRIPT;
     }
 
+    private function worldPath(): string
+    {
+        return rtrim($this->serverPath(), '/') . '/gamed/config/world';
+    }
+
+    private function npcgenScriptPath(): string
+    {
+        $stored = (string) (Setting::get('npcgen_replace_script') ?: '');
+        return $stored !== '' ? $stored : self::DEFAULT_NPCGEN_SCRIPT;
+    }
+
     public function adminIndex(): View
     {
         return view('admin.datafile-control', [
@@ -53,6 +65,9 @@ class DatafileControlController extends Controller
             'allowedFiles' => self::ALLOWED_FILES,
             'logs' => DatafileUpdateLog::query()->latest()->limit(50)->get(),
             'canEditPath' => auth()->user()?->isWebAdmin() === true,
+            'worldPath' => $this->worldPath(),
+            'npcgenScript' => $this->npcgenScriptPath(),
+            'npcgenLogs' => DatafileUpdateLog::query()->where('target_file', 'npcgen.data')->latest()->limit(30)->get(),
         ]);
     }
 
@@ -63,6 +78,9 @@ class DatafileControlController extends Controller
             'replaceScript' => $this->replaceScriptPath(),
             'allowedFiles' => self::ALLOWED_FILES,
             'logs' => DatafileUpdateLog::query()->latest()->limit(30)->get(),
+            'worldPath' => $this->worldPath(),
+            'npcgenScript' => $this->npcgenScriptPath(),
+            'npcgenLogs' => DatafileUpdateLog::query()->where('target_file', 'npcgen.data')->latest()->limit(20)->get(),
         ]);
     }
 
@@ -141,6 +159,77 @@ class DatafileControlController extends Controller
         }
 
         $okMessage = 'DATAFILE berhasil diganti. Lakukan restart game server sesuai SOP update.';
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $okMessage,
+            ]);
+        }
+
+        return back()->with('success', $okMessage);
+    }
+
+    public function uploadNpcgen(Request $request): RedirectResponse|JsonResponse
+    {
+        $request->validate([
+            'npcgen_file' => 'required|file|max:102400',
+        ]);
+
+        $upload = $request->file('npcgen_file');
+        $tempPath = $upload?->getRealPath() ?: '';
+        $worldPath = $this->worldPath();
+        $scriptPath = $this->npcgenScriptPath();
+
+        if (! is_dir($worldPath)) {
+            $msg = 'World directory tidak ditemukan: ' . $worldPath;
+            return $this->uploadError($request, $msg);
+        }
+
+        if (! is_file($scriptPath)) {
+            $msg = 'Script replace tidak ditemukan: ' . $scriptPath;
+            return $this->uploadError($request, $msg);
+        }
+
+        if ($tempPath === '' || ! is_file($tempPath)) {
+            return $this->uploadError($request, 'File upload tidak valid.');
+        }
+
+        $actor = (string) (auth()->user()?->name ?: 'unknown');
+        $panelArea = request()->routeIs('gm.*') ? 'gm' : 'admin';
+
+        $cmd = sprintf(
+            'sudo %s %s %s %s 2>&1',
+            escapeshellarg($scriptPath),
+            escapeshellarg($tempPath),
+            escapeshellarg($actor),
+            escapeshellarg($worldPath)
+        );
+
+        $output = [];
+        $exitCode = 0;
+        exec($cmd, $output, $exitCode);
+
+        $textOutput = trim(implode("\n", $output));
+        $status = $exitCode === 0 ? 'success' : 'failed';
+
+        DatafileUpdateLog::create([
+            'user_id' => auth()->id(),
+            'actor_name' => $actor,
+            'actor_role' => (string) (auth()->user()?->role ?: 'unknown'),
+            'panel_area' => $panelArea,
+            'target_file' => 'npcgen.data',
+            'original_name' => $upload?->getClientOriginalName(),
+            'file_size' => (int) ($upload?->getSize() ?: 0),
+            'script_output' => $textOutput,
+            'status' => $status,
+        ]);
+
+        if ($exitCode !== 0) {
+            $msg = 'Replace gagal: ' . ($textOutput !== '' ? $textOutput : 'unknown error');
+            return $this->uploadError($request, $msg);
+        }
+
+        $okMessage = 'npcgen.data (world) berhasil diganti. Restart server game diperlukan.';
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'ok' => true,

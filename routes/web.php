@@ -232,6 +232,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'webadmin'])->group(
     Route::get('datafile-control', [Admin\DatafileControlController::class, 'adminIndex'])->name('datafile-control');
     Route::post('datafile-control/path', [Admin\DatafileControlController::class, 'savePath'])->name('datafile-control.path');
     Route::post('datafile-control/upload', [Admin\DatafileControlController::class, 'upload'])->name('datafile-control.upload');
+    Route::post('datafile-control/npcgen', [Admin\DatafileControlController::class, 'uploadNpcgen'])->name('datafile-control.npcgen');
 
     // ─── Superadmin Only ────────────────────────────────────────
 
@@ -340,6 +341,7 @@ Route::prefix('gm')->name('gm.')->middleware(['auth', 'gm'])->group(function () 
     // DATAFILE Control (upload/replace + history)
     Route::get('datafile-control', [Admin\DatafileControlController::class, 'gmIndex'])->name('datafile-control');
     Route::post('datafile-control/upload', [Admin\DatafileControlController::class, 'upload'])->name('datafile-control.upload');
+    Route::post('datafile-control/npcgen', [Admin\DatafileControlController::class, 'uploadNpcgen'])->name('datafile-control.npcgen');
 
     // Ranking (read-only)
     Route::get('ranking', [Admin\RankingController::class, 'gmView'])->name('ranking');
