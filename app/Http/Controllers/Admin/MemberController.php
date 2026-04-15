@@ -199,21 +199,19 @@ class MemberController extends Controller
         $cashValue = $request->amount * 100; // Cubi stored as cents in DB
 
         DB::connection('mysql_game')->transaction(function () use ($user, $cashValue) {
-            $nextSn = (DB::connection('mysql_game')
-                ->table('usecashnow')
-                ->where('userid', $user->ID)
-                ->where('zoneid', 1)
-                ->min('sn') ?? 0) - 1;
+            // Insert ke usecashlog langsung dengan status=4 (paid/confirmed) agar muncul di Cubi Monitor
+            $nextSn = (DB::connection('mysql_game')->table('usecashlog')->where('userid', $user->ID)->max('sn') ?? 0) + 1;
 
-            DB::connection('mysql_game')->table('usecashnow')->insert([
+            DB::connection('mysql_game')->table('usecashlog')->insert([
                 'userid'   => $user->ID,
                 'zoneid'   => 1,
                 'sn'       => $nextSn,
-                'aid'      => 1,
-                'point'    => 0,
+                'aid'      => auth()->id(), // admin ID dari panel
+                'point'    => 5, // point=5 = admin topup (untuk tracking di monitor)
                 'cash'     => $cashValue,
-                'status'   => 0,
+                'status'   => 4, // 4 = paid/confirmed
                 'creatime' => now(),
+                'fintime'  => now(),
             ]);
         });
 
@@ -227,7 +225,7 @@ class MemberController extends Controller
             'updated_at' => now(),
         ]);
 
-        return back()->with('success', 'Berhasil mengirim ' . number_format($request->amount) . ' Cubi Gold ke ' . $user->name . '. Akan diterima saat login/relog.');
+        return back()->with('success', 'Berhasil mengirim ' . number_format($request->amount) . ' Cubi Gold ke ' . $user->name . '. Langsung masuk ke akun game.');
     }
 
     public function characterDetail(User $user, int $roleId): View
