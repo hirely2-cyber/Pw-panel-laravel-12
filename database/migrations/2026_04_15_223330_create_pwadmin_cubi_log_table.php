@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::connection('mysql_game')->create('pwadmin_cubi_log', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->unsignedInteger('userid')->index();
-            $table->integer('cash')->default(0);
-            $table->datetime('creatime')->useCurrent()->index();
-        });
+        if (!Schema::connection('mysql_game')->hasTable('pwadmin_cubi_log')) {
+            Schema::connection('mysql_game')->create('pwadmin_cubi_log', function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->unsignedInteger('userid')->index();
+                $table->integer('cash')->default(0);
+                $table->datetime('creatime')->useCurrent()->index();
+            });
+        }
     }
 
     /**
