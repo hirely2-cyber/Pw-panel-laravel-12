@@ -22,7 +22,7 @@ class CubiMonitorController extends Controller
             INNER JOIN (
                 SELECT userid, sn, MAX(`point`) as max_point
                 FROM usecashlog
-                WHERE sn > 1
+                WHERE sn >= 1
                 GROUP BY userid, sn
             ) d ON l.userid = d.userid AND l.sn = d.sn AND l.point = d.max_point
             WHERE l.status = 4
@@ -89,8 +89,12 @@ class CubiMonitorController extends Controller
                 ->where('payment_method', 'cubi')->where('status', 'approved')
                 ->orderBy('processed_at')
                 ->get(['user_id', 'amount', 'processed_at']);
+            $pwadminTopups = DB::connection('mysql_game')->table('pwadmin_cubi_log')
+                ->whereIn('userid', $uids)
+                ->orderBy('creatime')
+                ->get(['userid', 'cash', 'creatime']);
 
-            $suspicious = $suspicious->map(function ($row) use ($panelInvoices, $panelRewards, $panelBonus, $voucherTopups, $adminTopups, $eventDeliveries, $partnerCommissions, $partnerWithdrawals, $partnerIds, $cubiRate) {
+            $suspicious = $suspicious->map(function ($row) use ($panelInvoices, $panelRewards, $panelBonus, $voucherTopups, $adminTopups, $eventDeliveries, $partnerCommissions, $partnerWithdrawals, $pwadminTopups, $partnerIds, $cubiRate) {
                 if (($row->point ?? 0) != 0) return $row;
                 $t = \Carbon\Carbon::parse($row->creatime);
                 // Cubi Shop purchase
@@ -144,6 +148,12 @@ class CubiMonitorController extends Controller
                     && (floor($w->amount / $cubiRate) * 100) == $row->cash
                     && abs(\Carbon\Carbon::parse($w->processed_at)->diffInMinutes($t)) <= 120);
                 if ($pw) { $row->point = 3; return $row; }
+                // pwAdmin topup
+                $pa = $pwadminTopups->first(fn ($a) =>
+                    $a->userid == $row->userid
+                    && $a->cash == $row->cash
+                    && abs(\Carbon\Carbon::parse($a->creatime)->diffInMinutes($t)) <= 120);
+                if ($pa) { $row->point = 7; return $row; }
                 return $row;
             });
         }
@@ -218,7 +228,11 @@ class CubiMonitorController extends Controller
                 ->where('payment_method', 'cubi')->where('status', 'approved')
                 ->orderBy('processed_at')
                 ->get(['user_id', 'amount', 'processed_at']);
-            $largeTx = $largeTx->map(function ($row) use ($ltInvoices, $ltRewards, $ltVoucherTopups, $ltAdminTopups, $ltEventDeliveries, $ltPartnerCommissions, $ltPartnerWithdrawals, $partnerIds, $ltCubiRate) {
+            $ltPwadminTopups = DB::connection('mysql_game')->table('pwadmin_cubi_log')
+                ->whereIn('userid', $ltUids)
+                ->orderBy('creatime')
+                ->get(['userid', 'cash', 'creatime']);
+            $largeTx = $largeTx->map(function ($row) use ($ltInvoices, $ltRewards, $ltVoucherTopups, $ltAdminTopups, $ltEventDeliveries, $ltPartnerCommissions, $ltPartnerWithdrawals, $ltPwadminTopups, $partnerIds, $ltCubiRate) {
                 if (($row->point ?? 0) != 0) return $row;
                 $t = \Carbon\Carbon::parse($row->creatime);
                 $inv = $ltInvoices->first(fn ($i) =>
@@ -259,6 +273,12 @@ class CubiMonitorController extends Controller
                     && (floor($w->amount / $ltCubiRate) * 100) == $row->cash
                     && abs(\Carbon\Carbon::parse($w->processed_at)->diffInMinutes($t)) <= 120);
                 if ($pw) { $row->point = 3; return $row; }
+                // pwAdmin topup
+                $pa = $ltPwadminTopups->first(fn ($a) =>
+                    $a->userid == $row->userid
+                    && $a->cash == $row->cash
+                    && abs(\Carbon\Carbon::parse($a->creatime)->diffInMinutes($t)) <= 120);
+                if ($pa) { $row->point = 7; return $row; }
                 return $row;
             });
         }
@@ -267,39 +287,39 @@ class CubiMonitorController extends Controller
         $eventCubi  = (int) DB::connection('mysql_game')->table('usecashlog')->where('status', 4)->where('point', 4)->sum('cash') / 100;
         $eventCount = DB::connection('mysql_game')->table('usecashlog')->where('status', 4)->where('point', 4)->count();
         $eventUsers = DB::connection('mysql_game')->table('usecashlog')->where('status', 4)->where('point', 4)->distinct('userid')->count('userid');
-        $adminCubi  = (int) DB::connection('mysql_game')->table('usecashlog')->where('status', 4)->where('point', 5)->sum('cash') / 100;
-        $adminCount = DB::connection('mysql_game')->table('usecashlog')->where('status', 4)->where('point', 5)->count();
-        $adminUsers = DB::connection('mysql_game')->table('usecashlog')->where('status', 4)->where('point', 5)->distinct('userid')->count('userid');
+        $adminCubi  = (int) DB::table('pw_admin_cubi_topups')->where('reason', 'not like', 'Voucher:%')->sum('amount');
+        $adminCount = DB::table('pw_admin_cubi_topups')->where('reason', 'not like', 'Voucher:%')->count();
+        $adminUsers = DB::table('pw_admin_cubi_topups')->where('reason', 'not like', 'Voucher:%')->distinct('user_id')->count('user_id');
 
         $sourceDistribution = [
             [
                 'label' => 'Cubi Shop',
-                'color' => '#63b3ed',
-                'bg'    => 'rgba(99,179,237,.15)',
+                'color' => '#ffffff',
+                'bg'    => '#63b3ed',
                 'count' => DB::table('pw_invoices')->where('type', 'cubi')->where('status', 'paid')->count(),
                 'total' => (int) DB::table('pw_invoices')->where('type', 'cubi')->where('status', 'paid')->sum('cubi_amount'),
                 'users' => DB::table('pw_invoices')->where('type', 'cubi')->where('status', 'paid')->distinct('user_id')->count('user_id'),
             ],
             [
                 'label' => 'Referral',
-                'color' => '#50c878',
-                'bg'    => 'rgba(80,200,120,.15)',
+                'color' => '#ffffff',
+                'bg'    => '#50c878',
                 'count' => DB::table('pw_referral_rewards')->where('type', 'registration_cubi')->whereNotIn('referrer_id', $partnerIds)->count(),
                 'total' => (int) DB::table('pw_referral_rewards')->where('type', 'registration_cubi')->whereNotIn('referrer_id', $partnerIds)->sum('reward_amount'),
                 'users' => DB::table('pw_referral_rewards')->where('type', 'registration_cubi')->whereNotIn('referrer_id', $partnerIds)->distinct('referrer_id')->count('referrer_id'),
             ],
             [
                 'label' => 'Partner',
-                'color' => '#c084fc',
-                'bg'    => 'rgba(168,85,247,.15)',
+                'color' => '#ffffff',
+                'bg'    => '#a855f7',
                 'count' => DB::table('pw_referral_rewards')->where('type', 'registration_cubi')->whereIn('referrer_id', $partnerIds)->count(),
                 'total' => (int) DB::table('pw_referral_rewards')->where('type', 'registration_cubi')->whereIn('referrer_id', $partnerIds)->sum('reward_amount'),
                 'users' => DB::table('pw_referral_rewards')->where('type', 'registration_cubi')->whereIn('referrer_id', $partnerIds)->distinct('referrer_id')->count('referrer_id'),
             ],
             [
                 'label' => 'Event',
-                'color' => '#fbbf24',
-                'bg'    => 'rgba(251,191,36,.15)',
+                'color' => '#ffffff',
+                'bg'    => '#e5a615',
                 'count' => $eventCount,
                 'total' => $eventCubi,
                 'users' => $eventUsers,
@@ -307,7 +327,7 @@ class CubiMonitorController extends Controller
             [
                 'label' => 'Admin',
                 'color' => '#ffffff',
-                'bg'    => 'rgba(220,38,38,.85)',
+                'bg'    => '#dc2626',
                 'count' => $adminCount,
                 'total' => $adminCubi,
                 'users' => $adminUsers,
@@ -315,15 +335,23 @@ class CubiMonitorController extends Controller
             [
                 'label' => 'Voucher',
                 'color' => '#ffffff',
-                'bg'    => 'rgba(14,165,233,.85)',
+                'bg'    => '#0ea5e9',
                 'count' => DB::table('pw_admin_cubi_topups')->where('reason', 'like', 'Voucher:%')->count(),
                 'total' => (int) DB::table('pw_admin_cubi_topups')->where('reason', 'like', 'Voucher:%')->sum('amount'),
                 'users' => DB::table('pw_admin_cubi_topups')->where('reason', 'like', 'Voucher:%')->distinct('user_id')->count('user_id'),
             ],
             [
+                'label' => 'pwAdmin',
+                'color' => '#ffffff',
+                'bg'    => '#ff9800',
+                'count' => DB::connection('mysql_game')->table('pwadmin_cubi_log')->count(),
+                'total' => (int) DB::connection('mysql_game')->table('pwadmin_cubi_log')->sum('cash') / 100,
+                'users' => DB::connection('mysql_game')->table('pwadmin_cubi_log')->distinct('userid')->count('userid'),
+            ],
+            [
                 'label' => 'Unknown',
-                'color' => '#e05252',
-                'bg'    => 'rgba(220,60,60,.15)',
+                'color' => '#ffffff',
+                'bg'    => '#78716c',
                 'count' => null,
                 'total' => $stats['unknown_cubi'],
                 'users' => null,
@@ -440,8 +468,13 @@ class CubiMonitorController extends Controller
             ->distinct('user_id')
             ->count('user_id');
 
+        // Admin topup from panel (non-voucher)
+        $adminCubi = (int) DB::table('pw_admin_cubi_topups')->where('reason', 'not like', 'Voucher:%')->sum('amount');
+        $adminUsers = DB::table('pw_admin_cubi_topups')->where('reason', 'not like', 'Voucher:%')->distinct('user_id')->count('user_id');
+
         // Unknown = game total minus all panel-tracked sources (GM/manual additions)
-        $unknownCubi = max(0, (int) ($totalDelivered - $shopCubi - $referralCubi - $partnerCubi - $voucherCubi));
+        $pwadminCubi = (int) DB::connection($game)->table('pwadmin_cubi_log')->sum('cash') / 100;
+        $unknownCubi = max(0, (int) ($totalDelivered - $shopCubi - $referralCubi - $partnerCubi - $voucherCubi - $adminCubi - $pwadminCubi));
 
         $pendingCount = DB::connection($game)->table('usecashnow')->count();
         $gmCount      = DB::connection($game)->table('auth')->distinct('userid')->count('userid');

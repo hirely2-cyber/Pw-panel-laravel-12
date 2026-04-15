@@ -45,7 +45,7 @@
             @if(auth()->user()->isWebAdmin())
             <a href="{{ route('admin.members.index') }}" class="pw-adm-nav__item {{ request()->routeIs('admin.members*') ? 'is-active' : '' }}">
                 <svg viewBox="0 0 20 20" fill="none" width="16"><circle cx="8" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 17c0-3 2.7-5.5 6-5.5s6 2.5 6 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 8l2 2 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Members
+                Player
             </a>
             @endif
 

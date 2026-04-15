@@ -17,7 +17,7 @@ class CubiMonitorController extends Controller
         $totalDelivered = DB::connection($game)->table('usecashlog')->where('status', 4)->sum('cash');
         $totalUsers     = DB::connection($game)->table('usecashlog')->where('status', 4)->distinct('userid')->count('userid');
         $regBonus       = DB::connection($game)->table('usecashlog')->where('status', 4)->where('sn', 1)->sum('cash');
-        $extraTopups    = DB::connection($game)->table('usecashlog')->where('status', 4)->where('sn', '>', 1)->sum('cash');
+        $extraTopups    = DB::connection($game)->table('usecashlog')->where('status', 4)->where('sn', '>=', 1)->sum('cash');
         $pendingCount   = DB::connection($game)->table('usecashnow')->count();
 
         $stats = compact('totalDelivered', 'totalUsers', 'regBonus', 'extraTopups', 'pendingCount');
@@ -76,6 +76,10 @@ class CubiMonitorController extends Controller
             ->where('payment_method', 'cubi')->where('status', 'approved')
             ->orderBy('processed_at')
             ->get(['user_id', 'amount', 'processed_at']);
+        $pwadminTopups = DB::connection('mysql_game')->table('pwadmin_cubi_log')
+            ->whereIn('userid', $uids)
+            ->orderBy('creatime')
+            ->get(['userid', 'cash', 'creatime']);
 
         // Bulk fetch usernames and characters — eliminates N+1 queries
         $usernames  = DB::connection('mysql_game')->table('users')
@@ -86,7 +90,7 @@ class CubiMonitorController extends Controller
             ->groupBy('account_id')
             ->map(fn ($g) => $g->first()->role_name);
 
-        $recent = collect($recentRaw)->map(function ($row) use ($panelInvoices, $panelRewards, $panelBonus, $panelVoucherTopups, $panelAdminTopups, $panelEventDeliveries, $panelPartnerCommissions, $panelPartnerWithdrawals, $usernames, $characters, $cubiRate) {
+        $recent = collect($recentRaw)->map(function ($row) use ($panelInvoices, $panelRewards, $panelBonus, $panelVoucherTopups, $panelAdminTopups, $panelEventDeliveries, $panelPartnerCommissions, $panelPartnerWithdrawals, $pwadminTopups, $usernames, $characters, $cubiRate) {
             $row->username  = $usernames[$row->userid] ?? null;
             $row->character = $characters[$row->userid] ?? null;
             if (($row->point ?? 0) == 0) {
@@ -131,6 +135,12 @@ class CubiMonitorController extends Controller
                     && (floor($w->amount / $cubiRate) * 100) == $row->cash
                     && abs(\Carbon\Carbon::parse($w->processed_at)->diffInMinutes($t)) <= 120);
                 if ($pw) { $row->point = 3; return $row; }
+                // pwAdmin topup
+                $pa = $pwadminTopups->first(fn ($a) =>
+                    $a->userid == $row->userid
+                    && $a->cash == $row->cash
+                    && abs(\Carbon\Carbon::parse($a->creatime)->diffInMinutes($t)) <= 120);
+                if ($pa) { $row->point = 7; return $row; }
             }
             return $row;
         });

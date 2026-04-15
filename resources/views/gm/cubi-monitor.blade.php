@@ -101,6 +101,7 @@
                             4 => ['label' => 'Event',     'bg' => 'rgba(251,191,36,.85)',  'color' => '#000000'],
                             5 => ['label' => 'Admin',     'bg' => 'rgba(220,38,38,.85)',   'color' => '#ffffff'],
                             6 => ['label' => 'Voucher',   'bg' => 'rgba(14,165,233,.85)',  'color' => '#ffffff'],
+                            7 => ['label' => 'pwAdmin',   'bg' => 'rgba(255,152,0,.85)',   'color' => '#ffffff'],
                             default => ['label' => 'Unknown', 'bg' => 'rgba(120,120,120,.85)', 'color' => '#ffffff'],
                         };
                     @endphp

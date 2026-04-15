@@ -198,22 +198,30 @@ class MemberController extends Controller
 
         $cashValue = $request->amount * 100; // Cubi stored as cents in DB
 
-        DB::connection('mysql_game')->transaction(function () use ($user, $cashValue) {
-            // Insert ke usecashlog langsung dengan status=4 (paid/confirmed) agar muncul di Cubi Monitor
-            $nextSn = (DB::connection('mysql_game')->table('usecashlog')->where('userid', $user->ID)->max('sn') ?? 0) + 1;
+        try {
+            DB::connection('mysql_game')->transaction(function () use ($user, $cashValue) {
+                $nextSn = (DB::connection('mysql_game')
+                    ->table('usecashnow')
+                    ->where('userid', $user->ID)
+                    ->where('zoneid', 1)
+                    ->min('sn') ?? 0) - 1;
 
-            DB::connection('mysql_game')->table('usecashlog')->insert([
-                'userid'   => $user->ID,
-                'zoneid'   => 1,
-                'sn'       => $nextSn,
-                'aid'      => auth()->id(), // admin ID dari panel
-                'point'    => 5, // point=5 = admin topup (untuk tracking di monitor)
-                'cash'     => $cashValue,
-                'status'   => 4, // 4 = paid/confirmed
-                'creatime' => now(),
-                'fintime'  => now(),
-            ]);
-        });
+                DB::connection('mysql_game')->table('usecashnow')->insert([
+                    'userid'   => $user->ID,
+                    'zoneid'   => 1,
+                    'sn'       => $nextSn,
+                    'aid'      => 1,
+                    'point'    => 0,
+                    'cash'     => $cashValue,
+                    'status'   => 0,
+                    'creatime' => now(),
+                ]);
+                // usecashlog is written by the billing daemon after delivery.
+            });
+        } catch (\Throwable $e) {
+            \Log::error("Cubi topup error: " . $e->getMessage());
+            return back()->with('error', 'Gagal mengirim Cubi: ' . $e->getMessage());
+        }
 
         // Track for Cubi Monitor source detection
         DB::table('pw_admin_cubi_topups')->insert([
@@ -225,7 +233,7 @@ class MemberController extends Controller
             'updated_at' => now(),
         ]);
 
-        return back()->with('success', 'Berhasil mengirim ' . number_format($request->amount) . ' Cubi Gold ke ' . $user->name . '. Langsung masuk ke akun game.');
+        return back()->with('success', 'Berhasil mengirim ' . number_format($request->amount) . ' Cubi Gold ke ' . $user->name . '. Akan diterima saat login/relog.');
     }
 
     public function characterDetail(User $user, int $roleId): View

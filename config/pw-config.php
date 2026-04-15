@@ -28,6 +28,9 @@ return [
         'path'        => env('PW_SERVER_PATH', '/home/pw_server155'),
     ],
 
+    // pwAdmin (Tomcat) base URL for role sync
+    'pwadmin_url' => env('PW_ADMIN_URL', 'http://localhost:8080/pwAdmin'),
+
     /*
     |--------------------------------------------------------------------------
     | Currency

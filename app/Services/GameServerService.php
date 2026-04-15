@@ -81,7 +81,7 @@ class GameServerService
     {
         return (int) Cache::remember('pw.server.account_count', 300, function () {
             try {
-                return \App\Models\User::where('role', 'player')->count();
+                return \App\Models\User::count();
             } catch (\Throwable $e) {
                 Log::debug("GameServerService::accountCount error: {$e->getMessage()}");
                 return 0;

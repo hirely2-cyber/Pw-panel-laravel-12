@@ -162,8 +162,8 @@
                                 </template>
                             </div>
                             <button @click="toggleAttr(item)" :disabled="saving"
-                                    :style="'position:relative;width:42px;height:22px;border-radius:11px;border:1px solid ' + (attrs[item.key]?.value ? 'rgba(80,200,120,.65)' : 'var(--gc-track-border)') + ';cursor:pointer;transition:background .2s, border-color .2s;' +
-                                    (attrs[item.key]?.value ? 'background:#50c878;' : 'background:var(--gc-track-off);')">
+                                    :style="'position:relative;width:42px;height:22px;border-radius:11px;border:1px solid ' + (attrs[item.key]?.value ? 'rgba(80,200,120,.65)' : 'rgba(239,68,68,.55)') + ';cursor:pointer;transition:background .2s, border-color .2s;' +
+                                    (attrs[item.key]?.value ? 'background:#50c878;' : 'background:#ef4444;')">
                                 <span :style="'position:absolute;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;' +
                                       (attrs[item.key]?.value ? 'left:22px;' : 'left:2px;')"></span>
                             </button>

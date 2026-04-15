@@ -59,7 +59,7 @@
         <div class="pw-hero__stats-row">
             <div class="pw-hero__stat-item">
                 <span class="pw-hero__stat-label">{{ __('main.hero_stat_accounts') }}:</span>
-                <strong id="hero-accounts" class="pw-hero__stat-val" data-target="{{ \App\Models\User::where('role', 'player')->count() }}">0</strong>
+                <strong id="hero-accounts" class="pw-hero__stat-val" data-target="{{ \App\Models\User::count() }}">0</strong>
             </div>
             <div class="pw-hero__stat-sep" aria-hidden="true"></div>
             <div class="pw-hero__stat-item pw-hero__stat-item--server">

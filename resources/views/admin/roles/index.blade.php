@@ -228,11 +228,17 @@
 
 @push('scripts')
 <script>
-function syncRoles() {
+async function syncRoles() {
     const btn = document.getElementById('sync-btn');
     const msg = document.getElementById('sync-msg');
 
-    if (!confirm('Sync roles dari game server ke MySQL?\nPastikan server game running dan maps stopped.')) return;
+    const ok = await window.pwConfirm(
+        'Sync Roles',
+        'Sync roles dari game server ke MySQL? Pastikan server game running dan maps stopped.',
+        'warning',
+        'Ya, Sync'
+    );
+    if (!ok) return;
 
     btn.disabled = true;
     btn.innerHTML = '<svg class="spin" viewBox="0 0 16 16" width="14" fill="none"><path d="M2 8a6 6 0 0110.9-3.5M14 8a6 6 0 01-10.9 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M13 1v4h-4M3 15v-4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Syncing...';

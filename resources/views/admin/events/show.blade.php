@@ -2,8 +2,18 @@
 @section('title', 'Detail Event: ' . $event->title)
 
 @section('content')
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem;">
-    <a href="{{ route('admin.events.index') }}" class="pw-adm-btn pw-adm-btn--ghost pw-adm-btn--sm">← Kembali</a>
+
+{{-- Header --}}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:.6rem;">
+    <div style="display:flex;align-items:center;gap:.6rem;">
+        <a href="{{ route('admin.events.index') }}" class="pw-adm-btn pw-adm-btn--ghost pw-adm-btn--sm">← Kembali</a>
+        <h1 style="font-size:1.05rem;font-weight:700;color:var(--pw-text-light);margin:0;">{{ $event->title }}</h1>
+        @if($event->status === 'active') <span class="pw-badge pw-badge--success">Aktif</span>
+        @elseif($event->status === 'ended') <span class="pw-badge pw-badge--warning">Berakhir</span>
+        @elseif($event->status === 'distributed') <span class="pw-badge" style="background:rgba(56,189,248,.15);color:#38bdf8;">Distributed</span>
+        @else <span class="pw-badge">Draft</span>
+        @endif
+    </div>
     <div style="display:flex;gap:.4rem;">
         <a href="{{ route('admin.events.edit', $event) }}" class="pw-adm-btn pw-adm-btn--sm pw-adm-btn--ghost">Edit</a>
         @if($event->status === 'draft')
@@ -34,63 +44,67 @@
     </div>
 </div>
 
-{{-- Event Info --}}
-<div class="pw-adm-card" style="margin-bottom:1rem;">
-    <div class="pw-adm-card__title">{{ $event->title }}</div>
-    @if($event->description)
-    <p style="color:var(--pw-text-muted);font-size:.85rem;margin-bottom:1rem;">{{ $event->description }}</p>
-    @endif
+{{-- Stat Cards Row --}}
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:.75rem;">
+    <div class="pw-adm-card" style="padding:.8rem 1rem;margin-bottom:0;">
+        <div style="font-size:.62rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Syarat Level</div>
+        <div style="font-size:1.15rem;font-weight:700;color:var(--pw-text-light);">Lv. {{ $event->req_level }}</div>
+    </div>
+    <div class="pw-adm-card" style="padding:.8rem 1rem;margin-bottom:0;">
+        <div style="font-size:.62rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Syarat Cultivation</div>
+        <div style="font-size:1.15rem;font-weight:700;color:var(--pw-text-light);">{{ \App\Models\LaunchEvent::CULTIVATION_MAP[$event->req_cultivation] ?? 'Lv.'.$event->req_cultivation }}</div>
+    </div>
+    <div class="pw-adm-card" style="padding:.8rem 1rem;margin-bottom:0;">
+        <div style="font-size:.62rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Qualified / Target</div>
+        <div style="font-size:1.15rem;font-weight:700;color:#22c55e;">{{ $qualifiedCount }} <span style="color:var(--pw-text-muted);font-weight:400;">/ {{ $event->prize_winner_count }}</span></div>
+    </div>
+    <div class="pw-adm-card" style="padding:.8rem 1rem;margin-bottom:0;">
+        <div style="font-size:.62rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Total Peserta</div>
+        <div style="font-size:1.15rem;font-weight:700;color:var(--pw-text-light);">{{ $totalParticipants }}</div>
+    </div>
+</div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;">
-        <div>
-            <div style="font-size:.72rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;">Status</div>
-            <div style="margin-top:.2rem;">
-                @if($event->status === 'active') <span class="pw-badge pw-badge--success">Aktif</span>
-                @elseif($event->status === 'ended') <span class="pw-badge pw-badge--warning">Berakhir</span>
-                @elseif($event->status === 'distributed') <span class="pw-badge pw-badge--info" style="background:rgba(56,189,248,.15);color:#38bdf8;">Distributed</span>
-                @else <span class="pw-badge">Draft</span>
-                @endif
+{{-- Info Row: Prize + Period --}}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.2rem;">
+    <div class="pw-adm-card" style="padding:.8rem 1rem;margin-bottom:0;">
+        <div style="font-size:.62rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">Hadiah Cubi Gold</div>
+        <div style="font-size:1.15rem;font-weight:700;color:var(--pw-gold);margin-bottom:.5rem;">{{ number_format($event->prize_total_cubi) }} Cubi</div>
+        @if($event->hasTieredPrizes())
+        <div style="display:flex;gap:1rem;font-size:.82rem;">
+            <span>🥇 <strong>{{ number_format($event->prize_rank1) }}</strong></span>
+            <span>🥈 <strong>{{ number_format($event->prize_rank2) }}</strong></span>
+            <span>🥉 <strong>{{ number_format($event->prize_rank3) }}</strong></span>
+            <span style="color:var(--pw-text-muted);">Lainnya: <strong>{{ number_format($event->prizeForRank(4)) }}</strong>/orang</span>
+        </div>
+        @else
+        <div style="font-size:.82rem;color:var(--pw-text-muted);">{{ number_format($event->prizePerWinner()) }} Cubi per pemenang (rata)</div>
+        @endif
+    </div>
+    <div class="pw-adm-card" style="padding:.8rem 1rem;margin-bottom:0;">
+        <div style="font-size:.62rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">Periode Event</div>
+        <div style="display:flex;gap:1.5rem;align-items:center;">
+            <div>
+                <div style="font-size:.68rem;color:var(--pw-text-muted);">Mulai</div>
+                <div style="font-weight:600;font-size:.9rem;">{{ $event->start_at?->format('d M Y') }}</div>
+                <div style="font-size:.75rem;color:var(--pw-text-muted);">{{ $event->start_at?->format('H:i') }} WIB</div>
+            </div>
+            <div style="color:var(--pw-text-muted);font-size:1.2rem;">→</div>
+            <div>
+                <div style="font-size:.68rem;color:var(--pw-text-muted);">Berakhir</div>
+                <div style="font-weight:600;font-size:.9rem;">{{ $event->end_at?->format('d M Y') }}</div>
+                <div style="font-size:.75rem;color:var(--pw-text-muted);">{{ $event->end_at?->format('H:i') }} WIB</div>
             </div>
         </div>
-        <div>
-            <div style="font-size:.72rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;">Syarat</div>
-            <div style="margin-top:.2rem;font-weight:600;">Lv.{{ $event->req_level }} + Cultiv {{ $event->req_cultivation }}</div>
-        </div>
-        <div>
-            <div style="font-size:.72rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;">Hadiah Total</div>
-            <div style="margin-top:.2rem;font-weight:600;color:var(--pw-gold);">{{ number_format($event->prize_total_cubi) }} Cubi</div>
-        </div>
-        <div>
-            <div style="font-size:.72rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;">Hadiah Per Rank</div>
-            @if($event->hasTieredPrizes())
-            <div style="margin-top:.2rem;font-size:.82rem;line-height:1.6;">
-                <span style="font-weight:600;">🥇 {{ number_format($event->prize_rank1) }}</span> &bull;
-                <span style="font-weight:600;">🥈 {{ number_format($event->prize_rank2) }}</span> &bull;
-                <span style="font-weight:600;">🥉 {{ number_format($event->prize_rank3) }}</span><br>
-                <span style="color:var(--pw-text-muted);font-size:.75rem;">Lainnya: {{ number_format($event->prizeForRank(4)) }} Cubi/orang</span>
-            </div>
-            @else
-            <div style="margin-top:.2rem;font-weight:600;">{{ number_format($event->prizePerWinner()) }} Cubi</div>
-            @endif
-        </div>
-        <div>
-            <div style="font-size:.72rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;">Qualified</div>
-            <div style="margin-top:.2rem;font-weight:600;">{{ $qualifiedCount }} / {{ $event->prize_winner_count }}</div>
-        </div>
-        <div>
-            <div style="font-size:.72rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;">Total Peserta</div>
-            <div style="margin-top:.2rem;font-weight:600;">{{ $totalParticipants }}</div>
-        </div>
-        <div>
-            <div style="font-size:.72rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;">Periode</div>
-            <div style="margin-top:.2rem;font-size:.82rem;">{{ $event->start_at?->format('d M Y H:i') }} — {{ $event->end_at?->format('d M Y H:i') }}</div>
-        </div>
+        @if($event->description)
+        <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--pw-border);font-size:.78rem;color:var(--pw-text-muted);">{{ $event->description }}</div>
+        @endif
     </div>
 </div>
 
 {{-- Participants Table --}}
 <div class="pw-adm-card">
     <div class="pw-adm-card__title">Peserta ({{ $totalParticipants }})</div>
+    @if($totalParticipants > 0)
     <div class="pw-table-wrap">
         <table class="pw-table">
             <thead>
@@ -139,7 +153,13 @@
             </tbody>
         </table>
     </div>
-
     <div style="margin-top:1rem;">{{ $participants->links() }}</div>
+    @else
+    <div style="text-align:center;padding:2rem 1rem;color:var(--pw-text-muted);">
+        <svg viewBox="0 0 20 20" fill="none" width="32" style="margin:0 auto .6rem;opacity:.4;display:block;"><path d="M10 2a8 8 0 110 16 8 8 0 010-16z" stroke="currentColor" stroke-width="1.5"/><path d="M7 13s1.5-2 3-2 3 2 3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7.5" cy="8.5" r="1" fill="currentColor"/><circle cx="12.5" cy="8.5" r="1" fill="currentColor"/></svg>
+        <div style="font-size:.85rem;font-weight:600;">Belum ada peserta</div>
+        <div style="font-size:.75rem;margin-top:.3rem;">Data akan muncul setelah event aktif dan cron sync berjalan.</div>
+    </div>
+    @endif
 </div>
 @endsection

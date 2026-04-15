@@ -6,7 +6,7 @@
     <a href="{{ route('admin.events.index') }}" class="pw-adm-btn pw-adm-btn--ghost pw-adm-btn--sm">← Kembali</a>
 </div>
 
-<div class="pw-adm-card" style="max-width:640px;">
+<div class="pw-adm-card">
     <div class="pw-adm-card__title">Buat Event Baru</div>
 
     <form method="POST" action="{{ route('admin.events.store') }}">

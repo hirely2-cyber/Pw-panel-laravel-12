@@ -126,14 +126,14 @@
             </div>
             <div>
                 <h4 style="color:var(--pw-gold);font-size:.85rem;font-weight:600;margin-bottom:.5rem;">Contoh Pengisian</h4>
-                <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:.75rem;">
+                <div style="background:var(--pw-bg-card2);border:1px solid var(--pw-border);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:.75rem;">
                     <div style="font-size:.75rem;color:var(--pw-gold);margin-bottom:.3rem;">Item Game (dikirim ke mailbox)</div>
                     <div>Nama: <strong style="color:var(--pw-text)">Teleport Stone ×50</strong></div>
                     <div>Item ID: <strong style="color:var(--pw-text)">21652</strong></div>
                     <div>Jumlah: <strong style="color:var(--pw-text)">50</strong></div>
                     <div>Harga: <strong style="color:var(--pw-text)">500 Gold Points</strong></div>
                 </div>
-                <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:.75rem 1rem;">
+                <div style="background:var(--pw-bg-card2);border:1px solid var(--pw-border);border-radius:.5rem;padding:.75rem 1rem;">
                     <div style="font-size:.75rem;color:var(--pw-gold);margin-bottom:.3rem;">Jasa / Non-Item (tanpa kiriman)</div>
                     <div>Nama: <strong style="color:var(--pw-text)">VIP Pass 30 Hari</strong></div>
                     <div>Item ID: <strong style="color:var(--pw-text)">0</strong></div>

@@ -158,7 +158,7 @@ class EventController extends Controller
                 'zoneid'   => 1,
                 'sn'       => $nextSn,
                 'aid'      => 1,
-                'point'    => 0,
+                'point'    => 4,
                 'cash'     => $cashValue,
                 'status'   => 0,
                 'creatime' => $now,

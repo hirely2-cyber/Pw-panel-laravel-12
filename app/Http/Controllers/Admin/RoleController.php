@@ -201,18 +201,16 @@ class RoleController extends Controller
         \Illuminate\Support\Facades\Cache::put($lockKey, true, 60);
 
         try {
-            // Trigger sync via Tomcat pwAdmin (same Java process as role.jsp sqlsync)
+            // Call dedicated sync API endpoint (localhost only, no login required)
             $tomcatUrl = config('pw-api.pwadmin_url', 'http://127.0.0.1:8080/pwAdmin/');
-            $syncUrl = rtrim($tomcatUrl, '/') . '/index.jsp?page=role&process=sqlsync';
+            $syncUrl = rtrim($tomcatUrl, '/') . '/api_sync_roles.jsp?token=pw_panel_sync_2026';
 
             $ch = curl_init();
             curl_setopt_array($ch, [
                 CURLOPT_URL => $syncUrl,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT => 120,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTPHEADER => ['Accept: text/html'],
-                CURLOPT_COOKIE => 'JSESSIONID=' . ($this->getTomcatSession() ?? ''),
+                CURLOPT_CONNECTTIMEOUT => 10,
             ]);
 
             $response = curl_exec($ch);
@@ -227,67 +225,24 @@ class RoleController extends Controller
                 ], 422);
             }
 
-            // Check if response contains success message
-            $success = stripos($response, 'Imported to MySQL') !== false
-                    || stripos($response, 'Roles Imported') !== false;
+            $data = json_decode($response, true);
 
-            $totalAfter = DB::connection('mysql_game')->table('roles')->count();
-
-            if ($success) {
-                return response()->json([
-                    'ok' => true,
-                    'message' => "Sync berhasil. Total {$totalAfter} character di database.",
-                    'total' => $totalAfter,
-                ]);
-            }
-
-            // Check for failure message
-            $failed = stripos($response, 'Failed') !== false;
-            if ($failed) {
+            if ($httpCode !== 200 || !($data['ok'] ?? false)) {
                 return response()->json([
                     'ok' => false,
-                    'message' => 'Sync gagal dari Tomcat. Pastikan game server running dan maps stopped.',
+                    'message' => $data['message'] ?? "Sync gagal (HTTP {$httpCode})",
                 ], 422);
             }
 
+            $totalAfter = DB::connection('mysql_game')->table('roles')->count();
+
             return response()->json([
-                'ok' => $totalAfter > 0,
-                'message' => "Sync selesai. Total {$totalAfter} character. (HTTP {$httpCode})",
+                'ok' => true,
+                'message' => "Sync berhasil. Total {$totalAfter} character di database.",
                 'total' => $totalAfter,
             ]);
         } finally {
             \Illuminate\Support\Facades\Cache::forget($lockKey);
         }
-    }
-
-    /**
-     * Get authenticated Tomcat session for pwAdmin.
-     */
-    private function getTomcatSession(): ?string
-    {
-        $tomcatUrl = config('pw-api.pwadmin_url', 'http://127.0.0.1:8080/pwAdmin/');
-        $loginUrl = rtrim($tomcatUrl, '/') . '/index.jsp';
-
-        $user = config('pw-api.pwadmin_user', 'admin');
-        $pass = config('pw-api.pwadmin_pass', '');
-
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $loginUrl,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 10,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => http_build_query(['username' => $user, 'password' => md5($pass)]),
-            CURLOPT_HEADER => true,
-        ]);
-
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        if (preg_match('/JSESSIONID=([^;\s]+)/', $response ?? '', $m)) {
-            return $m[1];
-        }
-
-        return null;
     }
 }

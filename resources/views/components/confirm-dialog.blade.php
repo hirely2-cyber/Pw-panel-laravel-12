@@ -24,25 +24,23 @@
 <div id="pw-confirm-overlay"
      style="display:none;position:fixed;inset:0;z-index:9999;background:transparent;align-items:center;justify-content:center;">
     <div id="pw-confirm-box"
-         style="background:#1e1e1e;border:1px solid rgba(200,151,42,.25);border-radius:14px;padding:2rem 2rem 1.5rem;width:100%;max-width:400px;margin:1rem;box-shadow:0 25px 60px rgba(0,0,0,.6);transform:scale(.95);transition:transform .15s ease,opacity .15s ease;opacity:0;">
+         style="border-radius:14px;padding:2rem 2rem 1.5rem;width:100%;max-width:400px;margin:1rem;box-shadow:0 25px 60px rgba(0,0,0,.4);transform:scale(.95);transition:transform .15s ease,opacity .15s ease;opacity:0;">
 
         {{-- Icon area --}}
         <div id="pw-confirm-icon" style="width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;"></div>
 
         {{-- Title --}}
         <h3 id="pw-confirm-title"
-            style="text-align:center;font-size:1rem;font-weight:700;color:#f1f5f9;margin:0 0 .6rem;letter-spacing:.01em;"></h3>
+            style="text-align:center;font-size:1rem;font-weight:700;margin:0 0 .6rem;letter-spacing:.01em;"></h3>
 
         {{-- Message --}}
         <p id="pw-confirm-message"
-           style="text-align:center;font-size:.85rem;color:#94a3b8;line-height:1.55;margin:0 0 1.6rem;"></p>
+           style="text-align:center;font-size:.85rem;line-height:1.55;margin:0 0 1.6rem;"></p>
 
         {{-- Buttons --}}
         <div style="display:flex;gap:.6rem;">
             <button id="pw-confirm-cancel"
-                    style="flex:1;padding:.7rem 1rem;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#94a3b8;font-size:.85rem;font-weight:500;cursor:pointer;transition:background .15s,color .15s;"
-                    onmouseover="this.style.background='rgba(255,255,255,.07)';this.style.color='#f1f5f9'"
-                    onmouseout="this.style.background='transparent';this.style.color='#94a3b8'">
+                    style="flex:1;padding:.7rem 1rem;border-radius:8px;border:1px solid rgba(128,128,128,.25);background:transparent;font-size:.85rem;font-weight:500;cursor:pointer;transition:background .15s,color .15s;">
                 Batal
             </button>
             <button id="pw-confirm-ok"
@@ -54,6 +52,28 @@
         </div>
     </div>
 </div>
+
+<style>
+[data-theme="dark"] #pw-confirm-box {
+    background: #1e1e1e;
+    border: 1px solid rgba(200,151,42,.25);
+    box-shadow: 0 25px 60px rgba(0,0,0,.6);
+}
+[data-theme="dark"] #pw-confirm-title { color: #f1f5f9; }
+[data-theme="dark"] #pw-confirm-message { color: #94a3b8; }
+[data-theme="dark"] #pw-confirm-cancel { color: #94a3b8; border-color: rgba(255,255,255,.12); }
+[data-theme="dark"] #pw-confirm-cancel:hover { background: rgba(255,255,255,.07); color: #f1f5f9; }
+
+[data-theme="light"] #pw-confirm-box {
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,.1);
+    box-shadow: 0 25px 60px rgba(0,0,0,.15);
+}
+[data-theme="light"] #pw-confirm-title { color: #1e293b; }
+[data-theme="light"] #pw-confirm-message { color: #64748b; }
+[data-theme="light"] #pw-confirm-cancel { color: #64748b; border-color: rgba(0,0,0,.15); }
+[data-theme="light"] #pw-confirm-cancel:hover { background: rgba(0,0,0,.05); color: #1e293b; }
+</style>
 
 @push('scripts')
 <script>

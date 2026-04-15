@@ -107,6 +107,7 @@
                 <span style="background:rgba(251,191,36,.85);color:#000000;padding:.1rem .5rem;border-radius:3px;font-size:.68rem;">● Event</span>
                 <span style="background:rgba(220,38,38,.85);color:#ffffff;padding:.1rem .5rem;border-radius:3px;font-size:.68rem;">● Admin</span>
                 <span style="background:rgba(14,165,233,.85);color:#ffffff;padding:.1rem .5rem;border-radius:3px;font-size:.68rem;">● Voucher</span>
+                <span style="background:rgba(255,152,0,.85);color:#ffffff;padding:.1rem .5rem;border-radius:3px;font-size:.68rem;">● pwAdmin</span>
                 <span style="background:rgba(120,120,120,.85);color:#ffffff;padding:.1rem .5rem;border-radius:3px;font-size:.68rem;">● Unknown</span>
             </span>
         </div>
@@ -134,6 +135,7 @@
                             4 => ['label' => 'Event',      'bg' => 'rgba(251,191,36,.85)',  'color' => '#000000'],
                             5 => ['label' => 'Admin',      'bg' => 'rgba(220,38,38,.85)',   'color' => '#ffffff'],
                             6 => ['label' => 'Voucher',    'bg' => 'rgba(14,165,233,.85)',  'color' => '#ffffff'],
+                            7 => ['label' => 'pwAdmin',    'bg' => 'rgba(255,152,0,.85)',   'color' => '#ffffff'],
                             default => ['label' => 'Unknown', 'bg' => 'rgba(120,120,120,.85)', 'color' => '#ffffff'],
                         };
                     @endphp
@@ -187,6 +189,7 @@
                             4 => ['label' => 'Event',      'bg' => 'rgba(251,191,36,.85)',  'color' => '#000000'],
                             5 => ['label' => 'Admin',      'bg' => 'rgba(220,38,38,.85)',   'color' => '#ffffff'],
                             6 => ['label' => 'Voucher',    'bg' => 'rgba(14,165,233,.85)',  'color' => '#ffffff'],
+                            7 => ['label' => 'pwAdmin',    'bg' => 'rgba(255,152,0,.85)',   'color' => '#ffffff'],
                             default => ['label' => 'Unknown', 'bg' => 'rgba(120,120,120,.85)', 'color' => '#ffffff'],
                         };
                     @endphp
@@ -270,7 +273,7 @@
                         <td style="text-align:right;padding:.5rem .8rem;color:var(--pw-text-muted);">
                             {{ $src['count'] !== null ? number_format($src['count']) : '—' }}
                         </td>
-                        <td style="text-align:right;padding:.5rem .8rem;font-weight:600;color:{{ $src['color'] }};">
+                        <td style="text-align:right;padding:.5rem .8rem;font-weight:600;color:var(--pw-text-light);">
                             {{ number_format($src['total'], 0, ',', '.') }}
                         </td>
                         <td style="text-align:right;padding:.5rem .8rem;color:var(--pw-text-muted);">
@@ -292,6 +295,7 @@
         <strong style="color:#50c878;">Referral</strong> — Reward Cubi untuk pengundang biasa (bukan partner), dari pw_referral_rewards type=registration_cubi<br>
         <strong style="color:#c084fc;">Partner</strong> — Reward Cubi untuk akun partner terdaftar (pw_referral_partners)<br>
         <strong style="color:#0ea5e9;">Voucher</strong> — Cubi dari redeem voucher (tercatat di pw_admin_cubi_topups reason=Voucher:...)<br>
+        <strong style="color:#ff9800;">pwAdmin</strong> — Cubi yang ditambahkan melalui pwAdmin (tercatat di pwadmin_cubi_log)<br>
         <strong style="color:#e05252;">Unknown</strong> — Selisih antara total di game DB dan total panel — kemungkinan pemberian via GM tool atau data lama<br>
         <strong style="color:#ffa500;">Ghost Account</strong> — User ID ada di log Cubi tapi tidak ada di tabel users
     </div>
