@@ -34,8 +34,8 @@ class DashboardController extends Controller
         $cubiCoins = 0;
         try {
             $classMap = [
-                0 => 'Blademaster', 1 => 'Wizard', 2 => 'Cleric', 3 => 'Archer',
-                4 => 'Barbarian', 5 => 'Venomancer', 6 => 'Assassin', 7 => 'Psychic',
+                0 => 'Blademaster', 1 => 'Wizard', 2 => 'Psychic', 3 => 'Venomancer',
+                4 => 'Barbarian', 5 => 'Assassin', 6 => 'Archer', 7 => 'Cleric',
                 8 => 'Seeker', 9 => 'Mystic', 10 => 'Duskblade', 11 => 'Stormbringer',
             ];
             $raceMap = [
@@ -43,8 +43,8 @@ class DashboardController extends Controller
                 4 => 'Earthguard', 5 => 'Nightshade',
             ];
             $iconMap = [
-                0 => 'blademaster', 1 => 'wizzard', 2 => 'cleric', 3 => 'archer',
-                4 => 'barbarian', 5 => 'venomancer', 6 => 'assasin', 7 => 'psychic',
+                0 => 'blademaster', 1 => 'wizzard', 2 => 'psychic', 3 => 'venomancer',
+                4 => 'barbarian', 5 => 'assasin', 6 => 'archer', 7 => 'cleric',
                 8 => 'seeker', 9 => 'mystic', 10 => 'duskblade', 11 => 'stormbringer',
             ];
             $cultivationMap = [

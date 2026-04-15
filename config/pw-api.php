@@ -53,4 +53,13 @@ return [
     */
     's_readtype' => 3,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Tomcat pwAdmin integration (for Sync Roles)
+    |--------------------------------------------------------------------------
+    */
+    'pwadmin_url'  => env('PW_ADMIN_URL', 'http://127.0.0.1:8080/pwAdmin/'),
+    'pwadmin_user' => env('PW_ADMIN_USER', 'admin'),
+    'pwadmin_pass' => env('PW_ADMIN_PASS', ''),
+
 ];

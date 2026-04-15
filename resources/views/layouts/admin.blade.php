@@ -111,6 +111,10 @@
 
             {{-- ── MANAJEMEN GAME ── --}}
             <div class="pw-adm-nav__section">Manajemen Game</div>
+            <a href="{{ route('admin.roles.index') }}" class="pw-adm-nav__item {{ request()->routeIs('admin.roles*') ? 'is-active' : '' }}">
+                <svg viewBox="0 0 20 20" fill="none" width="16"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3 3-5.5 7-5.5s7 2.5 7 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Character Roles
+            </a>
             <a href="{{ route('admin.server-control') }}" class="pw-adm-nav__item {{ request()->routeIs('admin.server-control*') ? 'is-active' : '' }}">
                 <svg viewBox="0 0 20 20" fill="none" width="16"><rect x="2" y="3" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 16h8M10 15v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="9" r="1.2" fill="currentColor" opacity=".6"/><circle cx="10" cy="9" r="1.2" fill="currentColor" opacity=".6"/><circle cx="13" cy="9" r="1.2" fill="currentColor" opacity=".6"/></svg>
                 Server Control

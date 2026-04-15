@@ -14,9 +14,9 @@ class SyncEventProgress extends Command
     protected $description = 'Sync level & cultivation data untuk event yang aktif';
 
     private const CLASS_MAP = [
-        0 => 'Blademaster',  1 => 'Wizard',    2 => 'Cleric',
-        3 => 'Archer',       4 => 'Barbarian',  5 => 'Venomancer',
-        6 => 'Assassin',     7 => 'Psychic',    8 => 'Seeker',
+        0 => 'Blademaster',  1 => 'Wizard',    2 => 'Psychic',
+        3 => 'Venomancer',   4 => 'Barbarian',  5 => 'Assassin',
+        6 => 'Archer',       7 => 'Cleric',     8 => 'Seeker',
         9 => 'Mystic',      10 => 'Duskblade', 11 => 'Stormbringer',
     ];
 

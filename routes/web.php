@@ -228,6 +228,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'webadmin'])->group(
     Route::post('server-control/action', [Admin\ServerControlController::class, 'action'])->name('server-control.action');
     Route::get('server-control/status', [Admin\ServerControlController::class, 'status'])->name('server-control.status');
 
+    // Character Roles — view + sync + edit
+    Route::get('roles', [Admin\RoleController::class, 'index'])->name('roles.index');
+    Route::post('roles/sync', [Admin\RoleController::class, 'sync'])->name('roles.sync');
+    Route::get('roles/{roleId}', [Admin\RoleController::class, 'show'])->name('roles.show');
+    Route::get('roles/{roleId}/edit', [Admin\RoleController::class, 'edit'])->name('roles.edit');
+    Route::post('roles/{roleId}/update', [Admin\RoleController::class, 'update'])->name('roles.update');
+
     // DATAFILE Control — upload/replace by webadmin + superadmin
     Route::get('datafile-control', [Admin\DatafileControlController::class, 'adminIndex'])->name('datafile-control');
     Route::post('datafile-control/path', [Admin\DatafileControlController::class, 'savePath'])->name('datafile-control.path');
