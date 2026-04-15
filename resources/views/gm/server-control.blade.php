@@ -14,15 +14,15 @@
             {{-- Hostname / OS --}}
             <div style="display:flex;flex-direction:column;gap:.18rem;">
                 <span style="font-size:.58rem;font-weight:700;letter-spacing:.07em;color:var(--pw-text-muted);">HOST</span>
-                <span style="font-size:.82rem;font-weight:700;color:#e2e8f0;">{{ $serverInfo['hostname'] }}</span>
-                <span style="font-size:.63rem;color:#94a3b8;">{{ $serverInfo['os'] }}</span>
+                <span style="font-size:.82rem;font-weight:700;color:var(--pw-text-light);">{{ $serverInfo['hostname'] }}</span>
+                <span style="font-size:.63rem;color:var(--pw-text-muted);">{{ $serverInfo['os'] }}</span>
             </div>
 
             {{-- CPU --}}
             <div style="display:flex;flex-direction:column;gap:.18rem;">
                 <span style="font-size:.58rem;font-weight:700;letter-spacing:.07em;color:var(--pw-text-muted);">CPU</span>
-                <span style="font-size:.82rem;font-weight:700;color:#e2e8f0;">{{ $serverInfo['cpuCores'] }} Core</span>
-                <span style="font-size:.63rem;color:#94a3b8;" title="{{ $serverInfo['cpuModel'] }}">{{ Str::limit($serverInfo['cpuModel'], 28) }}</span>
+                <span style="font-size:.82rem;font-weight:700;color:var(--pw-text-light);">{{ $serverInfo['cpuCores'] }} Core</span>
+                <span style="font-size:.63rem;color:var(--pw-text-muted);" title="{{ $serverInfo['cpuModel'] }}">{{ Str::limit($serverInfo['cpuModel'], 28) }}</span>
             </div>
 
             {{-- CPU Load --}}
@@ -32,27 +32,27 @@
                 <span style="font-size:.82rem;font-weight:700;color:{{ $l1 > $lc ? '#ef4444' : ($l1 > $lc*0.7 ? '#f59e0b' : '#50c878') }};">
                     {{ $serverInfo['load1'] }}
                 </span>
-                <span style="font-size:.65rem;color:#94a3b8;">5m: {{ $serverInfo['load5'] }} &bull; 15m: {{ $serverInfo['load15'] }}</span>
+                <span style="font-size:.65rem;color:var(--pw-text-muted);">5m: {{ $serverInfo['load5'] }} &bull; 15m: {{ $serverInfo['load15'] }}</span>
             </div>
 
             {{-- Disk --}}
             <div style="display:flex;flex-direction:column;gap:.18rem;">
                 <span style="font-size:.58rem;font-weight:700;letter-spacing:.07em;color:var(--pw-text-muted);">DISK (/)</span>
                 <div style="display:flex;align-items:baseline;gap:.3rem;">
-                    <span style="font-size:.82rem;font-weight:700;color:#e2e8f0;">{{ $serverInfo['diskUsed'] }}</span>
-                    <span style="font-size:.68rem;color:#94a3b8;">/ {{ $serverInfo['diskTotal'] }}</span>
+                    <span style="font-size:.82rem;font-weight:700;color:var(--pw-text-light);">{{ $serverInfo['diskUsed'] }}</span>
+                    <span style="font-size:.68rem;color:var(--pw-text-muted);">/ {{ $serverInfo['diskTotal'] }}</span>
                 </div>
-                <div style="height:4px;background:rgba(255,255,255,.08);border-radius:3px;margin-top:.15rem;">
+                <div class="sc-bar-bg" style="height:4px;background:rgba(255,255,255,.08);border-radius:3px;margin-top:.15rem;">
                     <div style="height:100%;border-radius:3px;width:{{ $serverInfo['diskPct'] }}%;background:{{ $serverInfo['diskPct'] > 90 ? '#ef4444' : ($serverInfo['diskPct'] > 75 ? '#f59e0b' : '#3b82f6') }};"></div>
                 </div>
-                <span style="font-size:.63rem;color:#94a3b8;">{{ $serverInfo['diskPct'] }}% used</span>
+                <span style="font-size:.63rem;color:var(--pw-text-muted);">{{ $serverInfo['diskPct'] }}% used</span>
             </div>
 
             {{-- Uptime --}}
             <div style="display:flex;flex-direction:column;gap:.18rem;">
                 <span style="font-size:.58rem;font-weight:700;letter-spacing:.07em;color:var(--pw-text-muted);">UPTIME</span>
-                <span style="font-size:.82rem;font-weight:700;color:#e2e8f0;">{{ Str::after($serverInfo['uptime'], 'up ') }}</span>
-                <span style="font-size:.63rem;color:#94a3b8;">sistem berjalan</span>
+                <span style="font-size:.82rem;font-weight:700;color:var(--pw-text-light);">{{ Str::after($serverInfo['uptime'], 'up ') }}</span>
+                <span style="font-size:.63rem;color:var(--pw-text-muted);">sistem berjalan</span>
             </div>
 
         </div>
@@ -80,7 +80,7 @@
             <div>
                 <div style="font-size:.65rem;font-weight:700;letter-spacing:.07em;color:var(--pw-text-muted);margin-bottom:.5rem;">MEMORY USAGE</div>
                 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.35rem;margin-bottom:.6rem;">
-                    <div style="background:rgba(255,255,255,.04);border-radius:6px;padding:.4rem;text-align:center;">
+                    <div class="sc-membox" style="background:rgba(255,255,255,.04);border-radius:6px;padding:.4rem;text-align:center;">
                         <div style="font-size:.55rem;color:var(--pw-text-muted);margin-bottom:.15rem;">Total</div>
                         <div style="font-weight:700;font-size:.82rem;" x-text="memory.ram_total + ' MB'">-</div>
                     </div>
@@ -102,7 +102,7 @@
                     <span style="color:#60a5fa;">Apps</span>
                     <span x-text="memory.ram_total > 0 ? Math.round(memory.ram_used/memory.ram_total*100)+'%' : '0%'"></span>
                 </div>
-                <div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;margin-bottom:.35rem;">
+                <div class="sc-bar-bg" style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;margin-bottom:.35rem;">
                     <div :style="{ width: (memory.ram_total>0 ? Math.round(memory.ram_used/memory.ram_total*100) : 0) + '%', background: '#3b82f6', height:'100%', borderRadius:'3px', transition:'width .5s' }"></div>
                 </div>
                 {{-- Buff/Cache bar --}}
@@ -110,7 +110,7 @@
                     <span style="color:#f59e0b;">Buff/Cache</span>
                     <span x-text="memory.ram_total > 0 ? Math.round(memory.ram_buff/memory.ram_total*100)+'%' : '0%'"></span>
                 </div>
-                <div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;margin-bottom:.35rem;">
+                <div class="sc-bar-bg" style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;margin-bottom:.35rem;">
                     <div :style="{ width: (memory.ram_total>0 ? Math.round(memory.ram_buff/memory.ram_total*100) : 0) + '%', background: '#f59e0b', height:'100%', borderRadius:'3px', transition:'width .5s' }"></div>
                 </div>
                 {{-- Swap bar --}}
@@ -118,7 +118,7 @@
                     <span>Swap</span>
                     <span x-text="(memory.swp_total > 0 ? Math.round(memory.swp_used/memory.swp_total*100) : 0) + '% - ' + memory.swp_used + ' / ' + memory.swp_total + ' MB'"></span>
                 </div>
-                <div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;">
+                <div class="sc-bar-bg" style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;">
                     <div :style="{ width: (memory.swp_total>0 ? Math.round(memory.swp_used/memory.swp_total*100) : 0) + '%', background: ramColor(memory.swp_total>0 ? Math.round(memory.swp_used/memory.swp_total*100) : 0), height:'100%', borderRadius:'3px', transition:'width .5s' }"></div>
                 </div>
             </div>
@@ -127,13 +127,13 @@
             <div>
                 <div style="display:flex;flex-direction:column;gap:.28rem;">
                     <template x-for="(d, key) in daemons" :key="key">
-                        <div style="display:flex;align-items:center;justify-content:space-between;padding:.38rem .65rem;border-radius:5px;background:rgba(255,255,255,.03);">
+                        <div class="sc-daemon-row" style="display:flex;align-items:center;justify-content:space-between;padding:.38rem .65rem;border-radius:5px;background:rgba(255,255,255,.03);">
                             <div>
                                 <span style="font-weight:600;font-size:.8rem;" x-text="d.label"></span>
-                                <span style="font-size:.63rem;color:#94a3b8;font-family:monospace;margin-left:.4rem;" x-text="d.process"></span>
+                                <span style="font-size:.63rem;color:var(--pw-text-muted);font-family:monospace;margin-left:.4rem;" x-text="d.process"></span>
                             </div>
                             <div style="display:flex;align-items:center;gap:.4rem;">
-                                <span style="font-size:.68rem;color:#94a3b8;" x-text="d.count"></span>
+                                <span style="font-size:.68rem;color:var(--pw-text-muted);" x-text="d.count"></span>
                                 <span :style="d.count > 0
                                     ? 'background:rgba(80,200,120,.15);color:#50c878;border:1px solid rgba(80,200,120,.3);padding:.15rem .5rem;border-radius:4px;font-size:.65rem;font-weight:700;'
                                     : (starting ? 'background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.25);padding:.15rem .5rem;border-radius:4px;font-size:.65rem;font-weight:700;animation:pwPulse 1s ease-in-out infinite;' : 'background:rgba(220,60,60,.12);color:#e05252;border:1px solid rgba(220,60,60,.2);padding:.15rem .5rem;border-radius:4px;font-size:.65rem;font-weight:700;')"
@@ -202,8 +202,9 @@
                 <div style="display:flex;align-items:center;gap:.5rem;">
                     <span style="font-size:.72rem;color:var(--pw-text-muted);">Delay:</span>
                     <input type="number" x-model="stopAllDelay" min="0" max="3600" value="300"
+                           class="sc-input"
                            style="width:60px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:5px;
-                                  padding:.25rem .4rem;color:#fff;font-size:.75rem;text-align:center;">
+                                  padding:.25rem .4rem;color:var(--pw-text);font-size:.75rem;text-align:center;">
                     <span style="font-size:.72rem;color:var(--pw-text-muted);">detik</span>
                     <button @click="confirmAction('stopall')"
                             :disabled="mapsCount === 0"
@@ -230,8 +231,8 @@
                                 <input type="checkbox" :value="mapId" x-model="selectedOnline"
                                        style="cursor:pointer;accent-color:#50c878;width:12px;height:12px;flex-shrink:0;">
                                 <span style="font-family:monospace;font-size:.75rem;font-weight:700;color:#50c878;flex-shrink:0;" x-text="mapId"></span>
-                                <span style="font-size:.68rem;color:rgba(255,255,255,.3);flex-shrink:0;">:</span>
-                                <span style="font-size:.7rem;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" x-text="allMaps[mapId] ?? ''"></span>
+                                <span class="sc-colon" style="font-size:.68rem;color:rgba(255,255,255,.3);flex-shrink:0;">:</span>
+                                <span style="font-size:.7rem;color:var(--pw-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" x-text="allMaps[mapId] ?? ''"></span>
                             </div>
                         </template>
                         <div x-show="mapsCount === 0" style="text-align:center;color:var(--pw-text-muted);font-size:.75rem;padding:1rem 0;">
@@ -242,18 +243,18 @@
 
                 {{-- AVAILABLE MAPS --}}
                 <div style="display:flex;flex-direction:column;gap:.4rem;">
-                    <div style="font-size:.65rem;font-weight:700;letter-spacing:.07em;color:var(--pw-text-muted);padding-bottom:.3rem;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:.3rem;">
+                    <div class="sc-avail-header" style="font-size:.65rem;font-weight:700;letter-spacing:.07em;color:var(--pw-text-muted);padding-bottom:.3rem;border-bottom:1px solid var(--pw-border);display:flex;align-items:center;gap:.3rem;">
                         <svg viewBox="0 0 10 10" width="8" height="8" style="opacity:.5;"><circle cx="5" cy="5" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
                         AVAILABLE MAPS
                     </div>
                     <div style="overflow-y:auto;max-height:600px;display:flex;flex-direction:column;gap:.25rem;">
                         <template x-for="[mapId, mapName] in offlineMaps()" :key="mapId">
-                            <div style="display:flex;align-items:center;gap:.35rem;padding:.22rem .4rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:4px;min-width:0;">
+                            <div class="sc-avail-row" style="display:flex;align-items:center;gap:.35rem;padding:.22rem .4rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:4px;min-width:0;">
                                 <input type="checkbox" :value="mapId" x-model="selectedAvailable"
                                        style="cursor:pointer;accent-color:#50c878;width:12px;height:12px;flex-shrink:0;">
                                 <span style="font-family:monospace;font-size:.75rem;font-weight:600;flex-shrink:0;" x-text="mapId"></span>
-                                <span style="font-size:.68rem;color:rgba(255,255,255,.3);flex-shrink:0;">:</span>
-                                <span style="font-size:.7rem;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" x-text="mapName"></span>
+                                <span class="sc-colon" style="font-size:.68rem;color:rgba(255,255,255,.3);flex-shrink:0;">:</span>
+                                <span style="font-size:.7rem;color:var(--pw-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" x-text="mapName"></span>
                             </div>
                         </template>
                     </div>
@@ -281,7 +282,7 @@
     {{-- SAFE STOP COUNTDOWN MODAL --}}
     <template x-teleport="body">
     <div x-show="cdModal.active"
-         style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:360px;text-align:center;background:#1a1d23;border:1px solid rgba(220,60,60,.35);border-radius:16px;padding:2.5rem 2rem;box-shadow:0 0 0 1px rgba(0,0,0,.5),0 24px 60px rgba(0,0,0,.85);">
+         style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:360px;text-align:center;background:var(--pw-bg-card);border:1px solid rgba(220,60,60,.35);border-radius:16px;padding:2.5rem 2rem;box-shadow:0 0 0 1px rgba(0,0,0,.5),0 24px 60px rgba(0,0,0,.85);">
 
         {{-- Counting phase --}}
         <div x-show="cdModal.phase === 'counting'">
@@ -300,11 +301,11 @@
                             style="transition:stroke-dashoffset 1s linear;"/>
                 </svg>
                 <div style="position:absolute;text-align:center;">
-                    <div style="font-size:3rem;font-weight:900;color:#fff;line-height:1;" x-text="cdModal.sec"></div>
+                    <div style="font-size:3rem;font-weight:900;color:var(--pw-text-light);line-height:1;" x-text="cdModal.sec"></div>
                     <div style="font-size:.62rem;font-weight:600;letter-spacing:.08em;color:var(--pw-text-muted);">DETIK</div>
                 </div>
             </div>
-            <div style="font-size:.83rem;color:#94a3b8;line-height:1.6;margin-bottom:.4rem;">Pemain sedang diberi waktu untuk logout.</div>
+            <div style="font-size:.83rem;color:var(--pw-text-muted);line-height:1.6;margin-bottom:.4rem;">Pemain sedang diberi waktu untuk logout.</div>
             <div style="font-size:.75rem;color:var(--pw-text-muted);">Map akan dihentikan setelah hitungan selesai.</div>
         </div>
 
@@ -315,9 +316,9 @@
                 MENGHENTIKAN MAP...
             </div>
             <div style="display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;">
-                <div class="pw-spinner" style="width:64px;height:64px;border-radius:50%;border:6px solid rgba(255,255,255,.08);border-top-color:#f59e0b;"></div>
+                <div class="pw-spinner" style="width:64px;height:64px;border-radius:50%;border:6px solid rgba(0,0,0,.1);border-top-color:#f59e0b;"></div>
             </div>
-            <div style="font-size:.85rem;color:#94a3b8;margin-bottom:.7rem;">Menunggu semua map berhenti...</div>
+            <div style="font-size:.85rem;color:var(--pw-text-muted);margin-bottom:.7rem;">Menunggu semua map berhenti...</div>
             <div style="font-size:.95rem;font-weight:700;transition:color .4s;"
                  :style="mapsCount > 0 ? 'color:#f59e0b' : 'color:#50c878'"
                  x-text="mapsCount > 0 ? mapsCount + ' map masih aktif' : 'Semua map berhenti!'"></div>
@@ -354,13 +355,13 @@
             <tbody>
                 @forelse($actionLogs as $row)
                     <tr>
-                        <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;white-space:nowrap;">{{ $row->created_at?->format('d/m/Y H:i:s') }}</td>
-                        <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;">{{ $row->actor_name ?: '-' }}</td>
-                        <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;text-transform:uppercase;">{{ $row->actor_role ?: '-' }}</td>
-                        <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;font-family:monospace;">{{ strtoupper((string) $row->action) }}</td>
-                        <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;font-family:monospace;">{{ $row->target_map ?: '-' }}</td>
-                        <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;text-align:right;">{{ (int) $row->delay_seconds }}</td>
-                        <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;">
+                        <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;white-space:nowrap;">{{ $row->created_at?->format('d/m/Y H:i:s') }}</td>
+                        <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;">{{ $row->actor_name ?: '-' }}</td>
+                        <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;text-transform:uppercase;">{{ $row->actor_role ?: '-' }}</td>
+                        <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;font-family:monospace;">{{ strtoupper((string) $row->action) }}</td>
+                        <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;font-family:monospace;">{{ $row->target_map ?: '-' }}</td>
+                        <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;text-align:right;">{{ (int) $row->delay_seconds }}</td>
+                        <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;">
                             @if($row->result_ok)
                                 <span style="padding:.15rem .45rem;border-radius:999px;background:rgba(80,200,120,.15);color:#50c878;border:1px solid rgba(80,200,120,.35);">OK</span>
                             @else
@@ -370,7 +371,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" style="padding:1rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.82rem;color:var(--pw-text-muted);text-align:center;">Belum ada aktivitas Server Control yang tercatat.</td>
+                        <td colspan="7" style="padding:1rem;border-bottom:1px solid var(--pw-border);font-size:.82rem;color:var(--pw-text-muted);text-align:center;">Belum ada aktivitas Server Control yang tercatat.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -382,6 +383,11 @@
 @keyframes pwSpin { to { transform: rotate(360deg); } }
 .pw-spinner { animation: pwSpin 1s linear infinite; }
 @keyframes pwPulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+/* ── Light mode overrides for gm server-control ── */
+[data-theme="light"] .sc-daemon-row span[style*="font-weight:600"] {
+    color: var(--pw-text-light);
+}
 </style>
 
 <script>

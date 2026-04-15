@@ -66,7 +66,9 @@
 [data-theme="light"] .ed-input { background:#fff; border-color:#cbd5e1; color:#0f172a; }
 [data-theme="light"] .ed-select { background:#fff; border-color:#cbd5e1; color:#0f172a; }
 [data-theme="light"] .ed-stat { background:#f8fafc; }
-[data-theme="light"] .ed-btn { background:#f1f5f9; border-color:#cbd5e1; color:#475569; }/* Custom dropdown */
+[data-theme="light"] .ed-btn { background:#f1f5f9; border-color:#cbd5e1; color:#475569; }
+[data-theme="light"] .ed-btn:hover { background:#e2e8f0; color:#1e293b; }
+[data-theme="light"] .ed-dd-btn:hover { border-color:rgba(0,0,0,.3); }/* Custom dropdown */
 .ed-dd-btn {
     width:100%; display:flex; align-items:center; justify-content:space-between;
     padding:.38rem .6rem; border-radius:5px; font-size:.83rem;

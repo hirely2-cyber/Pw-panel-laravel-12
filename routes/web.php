@@ -44,6 +44,9 @@ Route::get('/api/online-count', function () {
         'online'   => $service::onlineCount(),
         'accounts' => $service::accountCount(),
         'server'   => $service::isOnline(),
+        'uptime'   => $service::uptime(),
+        'maps'     => $service::runningMaps(),
+        'players'  => $service::onlinePlayers(),
     ], 200, ['Cache-Control' => 'no-store, max-age=0']);
 })->name('api.online_count');
 

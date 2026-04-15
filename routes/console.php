@@ -12,6 +12,9 @@ Artisan::command('inspire', function () {
 // Sync ranking dari game DB setiap 10 menit
 Schedule::command('pw:sync-ranking')->everyTenMinutes();
 
+// Sync event progress setiap 3 menit
+Schedule::command('pw:sync-event')->everyThreeMinutes();
+
 // Update Top Sultan setiap hari jam 03:00
 Schedule::command('pw:update-sultan')->dailyAt('03:00');
 

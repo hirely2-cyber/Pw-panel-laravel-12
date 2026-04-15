@@ -95,7 +95,7 @@
                     </svg>
                 </div>
 
-                <h3 style="font-size:1.15rem;font-weight:700;color:{{ $dl['color'] }};margin-bottom:.4rem;">{{ $dl['title'] }}</h3>
+                <h3 class="pw-download-title" style="font-size:1.15rem;font-weight:700;color:{{ $dl['color'] }};margin-bottom:.4rem;">{{ $dl['title'] }}</h3>
                 <p style="font-size:.82rem;color:var(--pw-text-muted,#8a8a9a);margin-bottom:1.5rem;flex:1;">{{ $dl['desc'] }}</p>
 
                 @if($dl['url'])
@@ -104,7 +104,7 @@
                     {{ __('main.download_btn') }}
                 </a>
                 @else
-                <div class="pw-download-na" style="padding:.6rem 1rem;border-radius:.5rem;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.1);color:var(--pw-text-muted,#6a6a7a);font-size:.8rem;width:100%;text-align:center;">
+                <div class="pw-download-na" style="padding:.6rem 1rem;border-radius:.5rem;background:rgba(255,255,255,.03);border:1px dashed var(--pw-border);color:var(--pw-text-muted);font-size:.8rem;width:100%;text-align:center;">
                     {{ __('main.download_not_available') }}
                 </div>
                 @endif
@@ -205,7 +205,7 @@
 }
 .pw-sysreq__table-wrap {
     overflow-x: auto;
-    border: 1px solid rgba(255,255,255,.08);
+    border: 1px solid var(--pw-border);
     border-radius: 8px;
 }
 .pw-sysreq__table {
@@ -234,7 +234,7 @@
 .pw-sysreq__badge--min {
     background: rgba(255,255,255,.06);
     border: 1px solid rgba(255,255,255,.12);
-    color: rgba(255,255,255,.7);
+    color: var(--pw-text);
 }
 .pw-sysreq__badge--rec {
     background: rgba(184,134,11,.15);
@@ -242,7 +242,7 @@
     color: #d4a860;
 }
 .pw-sysreq__table tbody tr {
-    border-bottom: 1px solid rgba(255,255,255,.05);
+    border-bottom: 1px solid var(--pw-border);
     transition: background .2s;
 }
 .pw-sysreq__table tbody tr:last-child {
@@ -260,7 +260,7 @@
     align-items: center;
     gap: .6rem;
     font-weight: 600;
-    color: rgba(255,255,255,.95);
+    color: var(--pw-text-light);
     white-space: nowrap;
     min-width: 180px;
 }
@@ -269,11 +269,11 @@
     flex-shrink: 0;
 }
 .pw-sysreq__val {
-    color: rgba(255,255,255,.75);
+    color: var(--pw-text);
     font-size: .85rem;
 }
 .pw-sysreq__val--rec {
-    color: rgba(255,255,255,.9);
+    color: var(--pw-text-light);
     font-weight: 500;
 }
 .pw-sysreq__note {
@@ -285,7 +285,7 @@
     border-radius: 6px;
     background: rgba(184,134,11,.06);
     border: 1px solid rgba(184,134,11,.15);
-    color: rgba(255,255,255,.6);
+    color: var(--pw-text-muted);
     font-size: .78rem;
     line-height: 1.5;
 }
@@ -316,17 +316,7 @@
     border-color: rgba(184,134,11,.3);
     color: #8a6020;
 }
-[data-theme="light"] .pw-sysreq__table tbody tr { border-bottom-color: rgba(0,0,0,.06); }
-[data-theme="light"] .pw-sysreq__table tbody tr:hover { background: rgba(184,134,11,.04); }
-[data-theme="light"] .pw-sysreq__label { color: #1a1a1a; }
 [data-theme="light"] .pw-sysreq__icon { color: #8a6020; }
-[data-theme="light"] .pw-sysreq__val { color: rgba(0,0,0,.65); }
-[data-theme="light"] .pw-sysreq__val--rec { color: rgba(0,0,0,.85); }
-[data-theme="light"] .pw-sysreq__note {
-    background: rgba(184,134,11,.05);
-    border-color: rgba(184,134,11,.15);
-    color: rgba(0,0,0,.55);
-}
 [data-theme="light"] .pw-sysreq__note svg { color: #8a6020; }
 @media (max-width: 768px) {
     .pw-download-grid {

@@ -36,6 +36,7 @@
 .rl-dd-item:hover { background:rgba(240,165,0,.12); color:#fff; }
 .rl-dd-item--active { background:rgba(240,165,0,.18); color:#f0a500; font-weight:600; }
 [data-theme="light"] .rl-dd-btn { background:#fff; border-color:#cbd5e1; color:#0f172a; }
+[data-theme="light"] .rl-dd-btn:hover { border-color:rgba(0,0,0,.3); }
 [data-theme="light"] .rl-dd-menu { box-shadow:0 8px 24px rgba(0,0,0,.12); }
 [data-theme="light"] .rl-dd-item { color:var(--pw-text); }
 [data-theme="light"] .rl-dd-item:hover { background:rgba(138,94,0,.1); }

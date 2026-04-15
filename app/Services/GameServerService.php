@@ -44,31 +44,77 @@ class GameServerService
     }
 
     /**
+     * Get server uptime in seconds by checking the elapsed time of the glinkd process.
+     * Returns 0 if the process is not running.
+     */
+    public static function uptime(): int
+    {
+        return Cache::remember('pw.server.uptime', 30, function () {
+            try {
+                // Get elapsed time of glinkd in seconds (etimes format)
+                $output = shell_exec("ps -C glinkd -o etimes= 2>/dev/null");
+                if ($output) {
+                    // Take the first (oldest) glinkd process
+                    $lines = array_filter(array_map('trim', explode("\n", trim($output))));
+                    if (!empty($lines)) {
+                        return (int) max($lines);
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::debug("GameServerService::uptime failed: {$e->getMessage()}");
+            }
+            return 0;
+        });
+    }
+
+    /**
      * Get the number of online players.
      *
-     * Priority:
-     *  1. Query the game DB `roles` table for online characters (IsOnline = 1).
-     *  2. If game DB is not configured / query fails → return PW_FAKE_ONLINE env value.
+     * Counts established TCP connections on glinkd external ports (29000–29006).
+     * Each player maintains exactly one TCP connection to a glinkd instance.
+     * Localhost connections (inter-daemon) are excluded.
      *
-     * Result is cached for 60 seconds.
+     * Result is cached for 30 seconds.
      */
     public static function onlineCount(): int
     {
-        return (int) Cache::remember('pw.server.online_count', 60, function () {
+        return (int) Cache::remember('pw.server.online_count', 30, function () {
             try {
-                // PW game DB table: roles (standard PW 1.5.x structure)
-                // Column: IsOnline (tinyint 1 = online, 0 = offline)
-                $count = DB::connection('mysql_game')
-                    ->table(env('PW_GAME_ROLES_TABLE', 'roles'))
-                    ->where(env('PW_GAME_ONLINE_COLUMN', 'IsOnline'), 1)
-                    ->count();
+                $clientPort = (int) config('pw-api.ports.client', 29000);
+                $glinkdCount = (int) env('PW_GLINKD_COUNT', 7);
+                $lastPort = $clientPort + $glinkdCount - 1;
 
-                return max(0, (int) $count);
+                // Build port filter for ss command
+                $portFilters = [];
+                for ($p = $clientPort; $p <= $lastPort; $p++) {
+                    $portFilters[] = "sport = :{$p}";
+                }
+                $filter = implode(' or ', $portFilters);
+
+                $output = @shell_exec("ss -tn state established '( {$filter} )' 2>/dev/null");
+
+                if (! $output) {
+                    return max(0, (int) env('PW_FAKE_ONLINE', 0));
+                }
+
+                $count = 0;
+                foreach (explode("\n", trim($output)) as $line) {
+                    // Skip header line and empty lines
+                    if (str_contains($line, 'Recv-Q') || trim($line) === '') {
+                        continue;
+                    }
+                    // Skip inter-daemon connections (localhost to localhost)
+                    if (preg_match('/127\.0\.0\.1.+127\.0\.0\.1/', $line)) {
+                        continue;
+                    }
+                    $count++;
+                }
+
+                return max(0, $count);
             } catch (\Throwable $e) {
-                Log::debug("GameServerService::onlineCount DB error: {$e->getMessage()}");
+                Log::debug("GameServerService::onlineCount error: {$e->getMessage()}");
             }
 
-            // Fallback: value set in .env (0 = hide, or set a static number)
             return max(0, (int) env('PW_FAKE_ONLINE', 0));
         });
     }
@@ -148,6 +194,62 @@ class GameServerService
     }
 
     /**
+     * Get list of running maps from gs processes.
+     * Returns array of map IDs (e.g. ['gs01', 'is01', 'is02']).
+     * Cached for 30 seconds.
+     */
+    public static function runningMaps(): array
+    {
+        return Cache::remember('pw.server.maps', 30, function () {
+            $maps = [];
+            $output = @shell_exec('ps -A w 2>/dev/null');
+            if (! $output) return $maps;
+
+            foreach (explode("\n", $output) as $line) {
+                if (preg_match('/\.(\/gs\s+(\S+))/', $line, $m)) {
+                    $mapId = $m[2];
+                    if (! in_array($mapId, $maps)) {
+                        $maps[] = $mapId;
+                    }
+                }
+            }
+
+            sort($maps);
+            return $maps;
+        });
+    }
+
+    /**
+     * Get list of currently online characters via pwAdmin/gdeliveryd.
+     * Each entry: {id, name, level, class, gender, faction}
+     * Cached for 30 seconds.
+     */
+    public static function onlinePlayers(): array
+    {
+        return Cache::remember('pw.server.online_players', 30, function () {
+            try {
+                $url = 'http://127.0.0.1:8080/pwAdmin/api_online_players.jsp?token=pw_panel_sync_2026';
+                $ctx = stream_context_create(['http' => ['timeout' => 5]]);
+                $response = @file_get_contents($url, false, $ctx);
+
+                if ($response === false) {
+                    return [];
+                }
+
+                $data = json_decode($response, true);
+                if (! $data || ! ($data['ok'] ?? false)) {
+                    return [];
+                }
+
+                return $data['players'] ?? [];
+            } catch (\Throwable $e) {
+                Log::debug("GameServerService::onlinePlayers error: {$e->getMessage()}");
+                return [];
+            }
+        });
+    }
+
+    /**
      * Flush all server stats caches.
      */
     public static function flushCache(): void
@@ -155,5 +257,7 @@ class GameServerService
         Cache::forget('pw.server.online');
         Cache::forget('pw.server.online_count');
         Cache::forget('pw.server.account_count');
+        Cache::forget('pw.server.maps');
+        Cache::forget('pw.server.online_players');
     }
 }

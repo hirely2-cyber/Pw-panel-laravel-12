@@ -76,11 +76,11 @@
                 <div x-data="{ open: false, selected: '{{ old('ewallet_type', $partner->ewallet_type) }}' }" style="position:relative;">
                     <input type="hidden" name="ewallet_type" :value="selected">
                     <button type="button" @click="open=!open" @click.outside="open=false"
-                            style="width:100%;background:#1e1e1e;border:1px solid var(--pw-border);border-radius:6px;padding:.45rem .65rem;font-size:.8rem;color:var(--pw-text);outline:none;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;">
+                            style="width:100%;background:var(--pw-bg-card);border:1px solid var(--pw-border);border-radius:6px;padding:.45rem .65rem;font-size:.8rem;color:var(--pw-text);outline:none;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;">
                         <span x-text="selected || 'Pilih E-Wallet'" :style="!selected && 'color:var(--pw-text-muted)'"></span>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5;"><path d="M6 9l6 6 6-6"/></svg>
                     </button>
-                    <div x-show="open" x-cloak style="position:absolute;top:100%;left:0;right:0;z-index:30;margin-top:4px;background:#1e1e1e;border:1px solid var(--pw-border);border-radius:6px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.5);">
+                    <div x-show="open" x-cloak style="position:absolute;top:100%;left:0;right:0;z-index:30;margin-top:4px;background:var(--pw-bg-card);border:1px solid var(--pw-border);border-radius:6px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.5);">
                         <div @click="selected='';open=false" style="padding:.45rem .65rem;font-size:.8rem;color:var(--pw-text-muted);cursor:pointer;transition:background .15s;" onmouseenter="this.style.background='rgba(255,255,255,.06)'" onmouseleave="this.style.background='transparent'">Pilih E-Wallet</div>
                         @foreach(['Dana', 'OVO', 'GoPay', 'ShopeePay', 'LinkAja'] as $ew)
                         <div @click="selected='{{ $ew }}';open=false" style="padding:.45rem .65rem;font-size:.8rem;color:var(--pw-text);cursor:pointer;transition:background .15s;" onmouseenter="this.style.background='rgba(255,255,255,.06)'" onmouseleave="this.style.background='transparent'">{{ $ew }}</div>
@@ -302,7 +302,12 @@
 @media(max-width:768px){
     .pw-adm-stat__value{font-size:1.1rem;}
 }
-select option{background:#1e1e1e !important;color:var(--pw-text,#c4c4c4);}
-select option:checked,select option:hover{background:#2a2a2a !important;}
+select option{background:var(--pw-bg-card) !important;color:var(--pw-text,#c4c4c4);}
+select option:checked,select option:hover{background:var(--pw-bg-card2) !important;}
+
+/* ── Partner bonus light mode ── */
+[data-theme="light"] .pw-adm-card input[type="text"] {
+    background: #ffffff !important;
+}
 </style>
 @endpush

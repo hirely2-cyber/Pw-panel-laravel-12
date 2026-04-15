@@ -404,10 +404,10 @@
                     x-model="query" @input.debounce.300ms="search()" @focus="open = results.length > 0"
                     @click.away="open = false" autocomplete="off">
                 <div x-show="open && results.length > 0" x-cloak
-                    style="position:absolute;left:0;right:0;top:100%;z-index:10;background:#1a1a24;border:1px solid rgba(255,255,255,.1);border-radius:6px;max-height:200px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,.5);">
+                    style="position:absolute;left:0;right:0;top:100%;z-index:10;background:var(--pw-bg-card);border:1px solid var(--pw-border);border-radius:6px;max-height:200px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,.5);">
                     <template x-for="u in results" :key="u.ID">
                         <div @click="selectUser(u)"
-                            style="padding:.5rem .75rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.04);"
+                            style="padding:.5rem .75rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--pw-border);"
                             onmouseover="this.style.background='rgba(184,157,79,.1)'" onmouseout="this.style.background='transparent'">
                             <div>
                                 <span style="font-weight:600;color:var(--pw-gold-light);" x-text="u.name"></span>

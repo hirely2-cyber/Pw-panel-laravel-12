@@ -196,21 +196,21 @@
 {{-- Reject Modal --}}
 <div id="pw-reject-overlay"
      style="display:none;position:fixed;inset:0;z-index:9999;background:transparent;align-items:center;justify-content:center;">
-    <div style="background:#1e1e1e;border:1px solid rgba(239,68,68,.25);border-radius:14px;padding:2rem 2rem 1.5rem;width:100%;max-width:400px;margin:1rem;box-shadow:0 25px 60px rgba(0,0,0,.6);transform:scale(.95);transition:transform .15s ease,opacity .15s ease;opacity:0;" id="pw-reject-box">
+    <div style="background:var(--pw-bg-card);border:1px solid rgba(239,68,68,.25);border-radius:14px;padding:2rem 2rem 1.5rem;width:100%;max-width:400px;margin:1rem;box-shadow:0 25px 60px rgba(0,0,0,.6);transform:scale(.95);transition:transform .15s ease,opacity .15s ease;opacity:0;" id="pw-reject-box">
         <div style="width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;background:rgba(127,29,29,.5);border:1px solid rgba(239,68,68,.3);">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </div>
-        <h3 style="text-align:center;font-size:1rem;font-weight:700;color:#f1f5f9;margin:0 0 .6rem;">Tolak Pencairan</h3>
-        <p style="text-align:center;font-size:.85rem;color:#94a3b8;line-height:1.55;margin:0 0 1rem;">Tuliskan alasan penolakan pencairan bonus.</p>
+        <h3 style="text-align:center;font-size:1rem;font-weight:700;color:var(--pw-text-light);margin:0 0 .6rem;">Tolak Pencairan</h3>
+        <p style="text-align:center;font-size:.85rem;color:var(--pw-text-muted);line-height:1.55;margin:0 0 1rem;">Tuliskan alasan penolakan pencairan bonus.</p>
         <form id="pw-reject-form" method="POST">
             @csrf
             <textarea name="admin_note" id="pw-reject-note" required rows="3" placeholder="Tulis alasan..."
-                      style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.6rem .8rem;font-size:.82rem;color:#f1f5f9;outline:none;resize:vertical;margin-bottom:1rem;box-sizing:border-box;"></textarea>
+                      style="width:100%;background:var(--pw-bg-card2);border:1px solid var(--pw-border);border-radius:8px;padding:.6rem .8rem;font-size:.82rem;color:var(--pw-text-light);outline:none;resize:vertical;margin-bottom:1rem;box-sizing:border-box;"></textarea>
             <div style="display:flex;gap:.6rem;">
                 <button type="button" id="pw-reject-cancel"
-                        style="flex:1;padding:.7rem 1rem;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#94a3b8;font-size:.85rem;font-weight:500;cursor:pointer;"
-                        onmouseover="this.style.background='rgba(255,255,255,.07)';this.style.color='#f1f5f9'"
-                        onmouseout="this.style.background='transparent';this.style.color='#94a3b8'">
+                        style="flex:1;padding:.7rem 1rem;border-radius:8px;border:1px solid var(--pw-border);background:transparent;color:var(--pw-text-muted);font-size:.85rem;font-weight:500;cursor:pointer;"
+                        onmouseover="this.style.background='var(--pw-bg-card2)';this.style.color='var(--pw-text-light)'"
+                        onmouseout="this.style.background='transparent';this.style.color='var(--pw-text-muted)'">
                     Batal
                 </button>
                 <button type="submit"

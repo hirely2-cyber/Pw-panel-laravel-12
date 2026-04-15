@@ -38,9 +38,14 @@ class DashboardController extends Controller
                 4 => 'Barbarian', 5 => 'Assassin', 6 => 'Archer', 7 => 'Cleric',
                 8 => 'Seeker', 9 => 'Mystic', 10 => 'Duskblade', 11 => 'Stormbringer',
             ];
-            $raceMap = [
-                0 => 'Human', 1 => 'Winged Elf', 2 => 'Untamed', 3 => 'Tideborn',
-                4 => 'Earthguard', 5 => 'Nightshade',
+            // Race is fixed per class in PW — derive from occupation
+            $classRaceMap = [
+                0 => 'Human', 1 => 'Human',
+                2 => 'Tideborn', 3 => 'Untamed',
+                4 => 'Untamed', 5 => 'Tideborn',
+                6 => 'Winged Elf', 7 => 'Winged Elf',
+                8 => 'Earthguard', 9 => 'Earthguard',
+                10 => 'Nightshade', 11 => 'Nightshade',
             ];
             $iconMap = [
                 0 => 'blademaster', 1 => 'wizzard', 2 => 'psychic', 3 => 'venomancer',
@@ -78,7 +83,7 @@ class DashboardController extends Controller
                 ->table('roles')
                 ->where('account_id', $user->ID)
                 ->get()
-                ->map(function ($r) use ($classMap, $raceMap, $iconMap, $cultivationMap, $rolesData) {
+                ->map(function ($r) use ($classMap, $classRaceMap, $iconMap, $cultivationMap, $rolesData) {
                     $rd = $rolesData[$r->role_id] ?? null;
                     $status = $rd['status'] ?? [];
                     $prop = $status['property'] ?? [];
@@ -92,7 +97,7 @@ class DashboardController extends Controller
                         'class'         => $classMap[$r->role_occupation] ?? 'Unknown',
                         'class_id'      => $r->role_occupation,
                         'class_icon'    => ($iconMap[$r->role_occupation] ?? 'blademaster') . '.png',
-                        'race'          => $raceMap[$r->role_race] ?? 'Unknown',
+                        'race'          => $classRaceMap[$r->role_occupation] ?? 'Unknown',
                         'gender'        => $r->role_gender == 0 ? 'Male' : 'Female',
                         'spouse'        => $r->role_spouse > 0 ? $r->role_spouse : null,
                         'faction_name'  => ($r->faction_name && trim($r->faction_name) !== '') ? $r->faction_name : null,

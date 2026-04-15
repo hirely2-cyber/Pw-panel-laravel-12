@@ -322,12 +322,12 @@
                 <tbody>
                     @forelse($npcgenLogs as $row)
                         <tr>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;white-space:nowrap;">{{ $row->created_at?->format('d/m/Y H:i:s') }}</td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;">{{ $row->actor_name }}</td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;text-transform:uppercase;">{{ $row->actor_role }}</td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;">{{ $row->original_name ?: '-' }}</td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;text-align:right;">{{ number_format((int) $row->file_size) }}</td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;">
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;white-space:nowrap;">{{ $row->created_at?->format('d/m/Y H:i:s') }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;">{{ $row->actor_name }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;text-transform:uppercase;">{{ $row->actor_role }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;">{{ $row->original_name ?: '-' }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;text-align:right;">{{ number_format((int) $row->file_size) }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;">
                                 @if($row->status === 'success')
                                     <span style="padding:.15rem .45rem;border-radius:999px;background:rgba(80,200,120,.15);color:#50c878;border:1px solid rgba(80,200,120,.35);">SUCCESS</span>
                                 @else
@@ -337,7 +337,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" style="padding:1rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.82rem;color:var(--pw-text-muted);text-align:center;">Belum ada riwayat update npcgen.data.</td>
+                            <td colspan="6" style="padding:1rem;border-bottom:1px solid var(--pw-border);font-size:.82rem;color:var(--pw-text-muted);text-align:center;">Belum ada riwayat update npcgen.data.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -368,24 +368,24 @@
                 <tbody>
                     @forelse($logs as $row)
                         <tr>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;white-space:nowrap;">{{ $row->created_at?->format('d/m/Y H:i:s') }}</td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;">{{ $row->actor_name }}</td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;text-transform:uppercase;">{{ $row->actor_role }}</td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;font-family:monospace;">{{ $row->target_file }}</td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;">{{ $row->original_name ?: '-' }}</td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;text-align:right;">{{ number_format((int) $row->file_size) }}</td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;">
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;white-space:nowrap;">{{ $row->created_at?->format('d/m/Y H:i:s') }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;">{{ $row->actor_name }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;text-transform:uppercase;">{{ $row->actor_role }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;font-family:monospace;">{{ $row->target_file }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;">{{ $row->original_name ?: '-' }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;text-align:right;">{{ number_format((int) $row->file_size) }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;">
                                 @if($row->status === 'success')
                                     <span style="padding:.15rem .45rem;border-radius:999px;background:rgba(80,200,120,.15);color:#50c878;border:1px solid rgba(80,200,120,.35);">SUCCESS</span>
                                 @else
                                     <span style="padding:.15rem .45rem;border-radius:999px;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.35);">FAILED</span>
                                 @endif
                             </td>
-                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.74rem;color:var(--pw-text-muted);max-width:320px;word-break:break-word;">{{ $row->script_output ?: '-' }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.74rem;color:var(--pw-text-muted);max-width:320px;word-break:break-word;">{{ $row->script_output ?: '-' }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" style="padding:1rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.82rem;color:var(--pw-text-muted);text-align:center;">Belum ada riwayat update DATAFILE.</td>
+                            <td colspan="8" style="padding:1rem;border-bottom:1px solid var(--pw-border);font-size:.82rem;color:var(--pw-text-muted);text-align:center;">Belum ada riwayat update DATAFILE.</td>
                         </tr>
                     @endforelse
                 </tbody>

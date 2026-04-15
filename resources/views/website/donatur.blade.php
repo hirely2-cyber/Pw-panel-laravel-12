@@ -94,7 +94,7 @@
                 <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
             </svg>
             <select onchange="if(this.value) window.location.href='{{ route('donatur') }}?month='+this.value"
-                    style="background:#0a0a0f;color:#c8972a;border:1px solid rgba(200,151,42,.3);
+                    style="background:var(--pw-bg-card);color:var(--pw-gold);border:1px solid rgba(200,151,42,.3);
                            border-radius:6px;padding:.35rem .7rem;font-size:.92rem;font-weight:700;cursor:pointer;
                            outline:none;appearance:auto;">
                 @foreach($availableMonths as $ym)

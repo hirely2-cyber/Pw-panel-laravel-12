@@ -252,43 +252,43 @@
                                     <span class="pw-char-detail__val">{{ $char->role_id }}</span>
                                 </div>
                                 <div class="pw-char-detail__item">
-                                    <span class="pw-char-detail__label">Level</span>
+                                    <span class="pw-char-detail__label">{{ __('main.char_level') }}</span>
                                     <span class="pw-char-detail__val pw-char-detail__val--gold">{{ $char->level }}</span>
                                 </div>
                                 <div class="pw-char-detail__item">
-                                    <span class="pw-char-detail__label">Class</span>
+                                    <span class="pw-char-detail__label">{{ __('main.char_class') }}</span>
                                     <span class="pw-char-detail__val pw-char-detail__val--class">
-                                        <img src="/images/class/{{ $char->class_icon }}" alt="{{ $char->class }}" width="16" height="16">
+                                        <img src="/images/class/{{ $char->class_icon }}" alt="" width="16" height="16">
                                         {{ $char->class }}
                                     </span>
                                 </div>
                                 <div class="pw-char-detail__item">
-                                    <span class="pw-char-detail__label">Race</span>
+                                    <span class="pw-char-detail__label">{{ __('main.char_race') }}</span>
                                     <span class="pw-char-detail__val">{{ $char->race }}</span>
                                 </div>
                                 <div class="pw-char-detail__item">
-                                    <span class="pw-char-detail__label">Gender</span>
+                                    <span class="pw-char-detail__label">{{ __('main.char_gender') }}</span>
                                     <span class="pw-char-detail__val">{{ $char->gender }}</span>
                                 </div>
                                 @if($char->cultivation)
                                 <div class="pw-char-detail__item">
-                                    <span class="pw-char-detail__label">Cultivation</span>
+                                    <span class="pw-char-detail__label">{{ __('main.char_cultivation') }}</span>
                                     <span class="pw-char-detail__val">{{ $char->cultivation }}</span>
                                 </div>
                                 @endif
                                 <div class="pw-char-detail__item">
-                                    <span class="pw-char-detail__label">Guild</span>
+                                    <span class="pw-char-detail__label">{{ __('main.char_guild') }}</span>
                                     <span class="pw-char-detail__val">{{ $char->faction_name ?? '—' }}</span>
                                 </div>
                                 @if($char->faction_name)
                                 <div class="pw-char-detail__item">
-                                    <span class="pw-char-detail__label">Guild Level</span>
+                                    <span class="pw-char-detail__label">{{ __('main.char_guild_level') }}</span>
                                     <span class="pw-char-detail__val">{{ $char->faction_level }}</span>
                                 </div>
                                 @endif
                                 @if($char->spouse)
                                 <div class="pw-char-detail__item">
-                                    <span class="pw-char-detail__label">Spouse ID</span>
+                                    <span class="pw-char-detail__label">{{ __('main.char_spouse') }}</span>
                                     <span class="pw-char-detail__val">{{ $char->spouse }}</span>
                                 </div>
                                 @endif

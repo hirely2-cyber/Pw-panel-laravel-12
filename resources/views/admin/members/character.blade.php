@@ -336,6 +336,7 @@
 .rl-select:focus { outline:none; border-color:var(--pw-gold); }
 [data-theme="light"] .rl-select { background:#ffffff; border-color:rgba(0,0,0,.2); color:var(--pw-text); }
 [data-theme="light"] .rl-select option { background:#ffffff; color:var(--pw-text); }
+[data-theme="light"] .rl-item-header { background:rgba(0,0,0,.04); }
 
 /* ── Badge ── */
 .rl-badge { font-size:.65rem; font-weight:600; padding:.12rem .45rem; border-radius:12px; }

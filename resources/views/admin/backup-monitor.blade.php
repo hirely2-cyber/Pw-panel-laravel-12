@@ -32,10 +32,10 @@
             <tbody>
                 @forelse($files as $row)
                     <tr>
-                        <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;font-family:monospace;">{{ $row['name'] }}</td>
-                        <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;text-align:right;">{{ number_format((int) $row['size'] / 1048576, 2) }} MB</td>
-                        <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;">{{ \Carbon\Carbon::createFromTimestamp((int) $row['mtime'])->format('d/m/Y H:i:s') }}</td>
-                        <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;">
+                        <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;font-family:monospace;">{{ $row['name'] }}</td>
+                        <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;text-align:right;">{{ number_format((int) $row['size'] / 1048576, 2) }} MB</td>
+                        <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;">{{ \Carbon\Carbon::createFromTimestamp((int) $row['mtime'])->format('d/m/Y H:i:s') }}</td>
+                        <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.78rem;">
                             <div style="display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;">
                                 <form method="POST" action="{{ route('admin.backup-monitor.download') }}" style="display:inline;">
                                     @csrf
@@ -52,7 +52,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" style="padding:1rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.82rem;color:var(--pw-text-muted);text-align:center;">Belum ada file backup.</td>
+                        <td colspan="4" style="padding:1rem;border-bottom:1px solid var(--pw-border);font-size:.82rem;color:var(--pw-text-muted);text-align:center;">Belum ada file backup.</td>
                     </tr>
                 @endforelse
             </tbody>

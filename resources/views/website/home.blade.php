@@ -97,101 +97,107 @@
 </section>
 
 {{-- ============================================================
-     FEATURES BAR
+     SERVER STATUS SECTION (2-column: status left, players right)
 ============================================================ --}}
-<section class="pw-features">
-    <div class="pw-features__inner">
-        @if(config('pw-config.features.shop', true))
-        <a href="{{ route('shop') }}" class="pw-feature-card">
-            <div class="pw-feature-card__icon">
-                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="20" cy="20" r="19" stroke="url(#fi1)" stroke-width="1.5"/>
-                    <defs><linearGradient id="fi1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e8b84b"/><stop offset="1" stop-color="#9a6820"/></linearGradient></defs>
-                    <path d="M12 14h3l2 10h8l2-8H15" stroke="#c8972a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="18" cy="26" r="1.5" fill="#c8972a"/>
-                    <circle cx="24" cy="26" r="1.5" fill="#c8972a"/>
-                </svg>
-            </div>
-            <h3>{{ __('main.feature_shop') }}</h3>
-            <p>{{ __('main.feature_shop_desc') }}</p>
-        </a>
-        @endif
+<section class="pw-srv" id="server-status" x-data="pwServerStatus()" x-init="init()">
+    <div class="pw-srv__grid">
 
-        @if(config('pw-config.features.donate', true))
-        <a href="{{ route('cubi-shop') }}" class="pw-feature-card">
-            <div class="pw-feature-card__icon">
-                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="20" cy="20" r="19" stroke="url(#fi2)" stroke-width="1.5"/>
-                    <defs><linearGradient id="fi2" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e8b84b"/><stop offset="1" stop-color="#9a6820"/></linearGradient></defs>
-                    <circle cx="20" cy="20" r="8" stroke="#c8972a" stroke-width="1.5"/>
-                    <text x="20" y="24" text-anchor="middle" font-size="10" font-weight="700" fill="#c8972a">G</text>
-                </svg>
+        {{-- LEFT COLUMN: Server Status Card --}}
+        <div class="pw-srv__card">
+            <div class="pw-srv__card-head">
+                <svg viewBox="0 0 20 20" fill="none" width="14"><rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M6 8h8M6 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <span>{{ __('main.server_status') }}</span>
             </div>
-            <h3>{{ __('main.feature_donate') }}</h3>
-            <p>{{ __('main.feature_donate_desc') }}</p>
-        </a>
-        @endif
+            <div class="pw-srv__card-body">
+                {{-- Server name + online indicator --}}
+                <div class="pw-srv__main">
+                    <div class="pw-srv__indicator" :class="server ? 'pw-srv__indicator--on' : 'pw-srv__indicator--off'">
+                        <span class="pw-srv__beacon"></span>
+                        <span class="pw-srv__beacon-ring"></span>
+                    </div>
+                    <div class="pw-srv__info">
+                        <div class="pw-srv__label">{{ $__siteName }}</div>
+                        <div class="pw-srv__state" :class="server ? 'pw-srv__state--on' : 'pw-srv__state--off'" x-text="server ? '{{ __('main.server_online') }}' : '{{ __('main.server_offline') }}'">···</div>
+                    </div>
+                </div>
 
-        @if(config('pw-config.features.vote', true))
-        <a href="{{ route('vote') }}" class="pw-feature-card">
-            <div class="pw-feature-card__icon">
-                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="20" cy="20" r="19" stroke="url(#fi3)" stroke-width="1.5"/>
-                    <defs><linearGradient id="fi3" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e8b84b"/><stop offset="1" stop-color="#9a6820"/></linearGradient></defs>
-                    <path d="M20 10l2.2 6.8H29L24 20.6l2.3 6.8-6.3-4.6-6.3 4.6 2.3-6.8L11 16.8h6.8L20 10z" stroke="#c8972a" stroke-width="1.5" stroke-linejoin="round"/>
-                </svg>
+                {{-- Stats grid --}}
+                <div class="pw-srv__stats">
+                    <div class="pw-srv__stat">
+                        <div class="pw-srv__stat-icon">
+                            <svg viewBox="0 0 20 20" fill="none" width="15"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 17c0-3 3.1-5.5 7-5.5s7 2.5 7 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                        </div>
+                        <div class="pw-srv__stat-body">
+                            <span class="pw-srv__stat-val" x-text="online.toLocaleString()">0</span>
+                            <span class="pw-srv__stat-label">{{ __('main.srv_online') }}</span>
+                        </div>
+                    </div>
+                    <div class="pw-srv__stat">
+                        <div class="pw-srv__stat-icon">
+                            <svg viewBox="0 0 20 20" fill="none" width="15"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.2"/><circle cx="13" cy="7" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M1 17c0-2.5 2.7-4.5 6-4.5M13 12.5c3.3 0 6 2 6 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                        </div>
+                        <div class="pw-srv__stat-body">
+                            <span class="pw-srv__stat-val" x-text="accounts.toLocaleString()">0</span>
+                            <span class="pw-srv__stat-label">{{ __('main.hero_stat_accounts') }}</span>
+                        </div>
+                    </div>
+                    <div class="pw-srv__stat">
+                        <div class="pw-srv__stat-icon">
+                            <svg viewBox="0 0 20 20" fill="none" width="15"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.3"/><path d="M10 6v4.5l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div class="pw-srv__stat-body">
+                            <span class="pw-srv__stat-val" x-text="uptime">--</span>
+                            <span class="pw-srv__stat-label">{{ __('main.srv_uptime') }}</span>
+                        </div>
+                    </div>
+                    <div class="pw-srv__stat">
+                        <div class="pw-srv__stat-icon">
+                            <svg viewBox="0 0 20 20" fill="none" width="15"><rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M6 8h8M6 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                        </div>
+                        <div class="pw-srv__stat-body">
+                            <span class="pw-srv__stat-val" x-text="maps.length">0</span>
+                            <span class="pw-srv__stat-label">{{ __('main.srv_maps') }}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <h3>{{ __('main.feature_vote') }}</h3>
-            <p>{{ __('main.feature_vote_desc') }}</p>
-        </a>
-        @endif
+        </div>
 
-        @if(config('pw-config.features.ranking', true))
-        <a href="{{ route('ranking') }}" class="pw-feature-card">
-            <div class="pw-feature-card__icon">
-                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="20" cy="20" r="19" stroke="url(#fi4)" stroke-width="1.5"/>
-                    <defs><linearGradient id="fi4" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e8b84b"/><stop offset="1" stop-color="#9a6820"/></linearGradient></defs>
-                    <rect x="11" y="22" width="4" height="8" rx="1" stroke="#c8972a" stroke-width="1.4"/>
-                    <rect x="18" y="16" width="4" height="14" rx="1" stroke="#c8972a" stroke-width="1.4"/>
-                    <rect x="25" y="10" width="4" height="20" rx="1" stroke="#c8972a" stroke-width="1.4"/>
-                </svg>
+        {{-- RIGHT COLUMN: Online Players Card --}}
+        <div class="pw-srv__card pw-srv__card--players">
+            <div class="pw-srv__card-head">
+                <svg viewBox="0 0 20 20" fill="none" width="14"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 17c0-3 3.1-5.5 7-5.5s7 2.5 7 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                <span>{{ __('main.srv_online_players') }}</span>
+                <span class="pw-srv__badge" x-text="players.length">0</span>
             </div>
-            <h3>{{ __('main.feature_ranking') }}</h3>
-            <p>{{ __('main.feature_ranking_desc') }}</p>
-        </a>
-        @endif
+            {{-- Table header --}}
+            <div class="pw-srv__player-header">
+                <span class="pw-srv__ph-no">#</span>
+                <span class="pw-srv__ph-cls"></span>
+                <span class="pw-srv__ph-name">{{ __('main.srv_character') }}</span>
+                <span class="pw-srv__ph-gender"></span>
+                <span class="pw-srv__ph-lvl">{{ __('main.srv_level') }}</span>
+                <span class="pw-srv__ph-class">{{ __('main.srv_class') }}</span>
+                <span class="pw-srv__ph-faction">{{ __('main.srv_faction') }}</span>
+            </div>
+            <div class="pw-srv__players-list">
+                <template x-if="players.length === 0">
+                    <div class="pw-srv__players-empty">{{ __('main.srv_no_players') }}</div>
+                </template>
+                <template x-for="(p, idx) in players" :key="p.id">
+                    <div class="pw-srv__player-row">
+                        <span class="pw-srv__pr-no" x-text="idx + 1"></span>
+                        <img class="pw-srv__player-icon" :src="classIcon(p.class)" :alt="classLabel(p.class)" width="20" height="20">
+                        <span class="pw-srv__player-name" x-text="p.name"></span>
+                        <span class="pw-srv__pr-gender" :class="p.gender === 0 ? 'pw-srv__pr-gender--m' : 'pw-srv__pr-gender--f'" x-text="p.gender === 0 ? '♂' : '♀'"></span>
+                        <span class="pw-srv__pr-lvl" x-text="p.level"></span>
+                        <span class="pw-srv__pr-class" x-text="classLabel(p.class)"></span>
+                        <span class="pw-srv__pr-faction" x-text="p.faction || '-'"></span>
+                    </div>
+                </template>
+            </div>
+        </div>
 
-        @if(config('pw-config.features.service', true))
-        <a href="{{ route('services') }}" class="pw-feature-card">
-            <div class="pw-feature-card__icon">
-                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="20" cy="20" r="19" stroke="url(#fi5)" stroke-width="1.5"/>
-                    <defs><linearGradient id="fi5" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e8b84b"/><stop offset="1" stop-color="#9a6820"/></linearGradient></defs>
-                    <path d="M14 20a6 6 0 1112 0 6 6 0 01-12 0z" stroke="#c8972a" stroke-width="1.5"/>
-                    <path d="M20 11v3M20 26v3M11 20h3M26 20h3" stroke="#c8972a" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-            </div>
-            <h3>{{ __('main.feature_service') }}</h3>
-            <p>{{ __('main.feature_service_desc') }}</p>
-        </a>
-        @endif
-
-        @if(config('pw-config.features.voucher', true))
-        <a href="{{ route('voucher') }}" class="pw-feature-card">
-            <div class="pw-feature-card__icon">
-                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="20" cy="20" r="19" stroke="url(#fi6)" stroke-width="1.5"/>
-                    <defs><linearGradient id="fi6" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e8b84b"/><stop offset="1" stop-color="#9a6820"/></linearGradient></defs>
-                    <rect x="10" y="14" width="20" height="12" rx="2" stroke="#c8972a" stroke-width="1.5"/>
-                    <circle cx="20" cy="20" r="3" stroke="#c8972a" stroke-width="1.5" stroke-dasharray="2 1"/>
-                    <path d="M14 14v12M26 14v12" stroke="#c8972a" stroke-width="1" stroke-dasharray="2 2"/>
-                </svg>
-            </div>
-            <h3>{{ __('main.feature_voucher') }}</h3>
-            <p>{{ __('main.feature_voucher_desc') }}</p>
-        </a>
-        @endif
     </div>
 </section>
 
@@ -542,6 +548,66 @@
 
 @push('scripts')
 <script>
+function pwServerStatus() {
+    const PW_CLASSES = {0:'Blademaster',1:'Wizard',2:'Psychic',3:'Venomancer',4:'Barbarian',5:'Assassin',6:'Archer',7:'Cleric',8:'Seeker',9:'Mystic'};
+    const PW_CLASS_ICONS = {0:'blademaster',1:'wizzard',2:'psychic',3:'venomancer',4:'barbarian',5:'assasin',6:'archer',7:'cleric',8:'seeker',9:'mystic'};
+    return {
+        server: false,
+        online: 0,
+        accounts: 0,
+        maps: [],
+        players: [],
+        uptime: '--',
+        _uptimeSec: 0,
+        _lastFetch: 0,
+        _timer: null,
+        init() {
+            this.fetch();
+            setInterval(() => this.fetch(), 30000);
+            // Tick uptime every second
+            this._timer = setInterval(() => this._tick(), 1000);
+        },
+        classLabel(id) { return PW_CLASSES[id] || 'Unknown'; },
+        classIcon(id) { return '/images/class/' + (PW_CLASS_ICONS[id] || 'blademaster') + '.png'; },
+        fetch() {
+            fetch('{{ route("api.online_count") }}')
+                .then(r => r.json())
+                .then(d => {
+                    this.server = d.server;
+                    this.online = d.online || 0;
+                    this.accounts = d.accounts || 0;
+                    this.maps = d.maps || [];
+                    this.players = d.players || [];
+                    if (d.server) {
+                        this._uptimeSec = d.uptime || 0;
+                        this._lastFetch = Date.now();
+                        this._formatUptime();
+                    } else {
+                        this._uptimeSec = 0;
+                        this.uptime = '--';
+                    }
+                })
+                .catch(() => {});
+        },
+        _tick() {
+            if (!this.server || !this._lastFetch) return;
+            const elapsed = Math.floor((Date.now() - this._lastFetch) / 1000);
+            const total = this._uptimeSec + elapsed;
+            this._formatUptimeVal(total);
+        },
+        _formatUptime() { this._formatUptimeVal(this._uptimeSec); },
+        _formatUptimeVal(s) {
+            if (s <= 0) { this.uptime = '--'; return; }
+            const d = Math.floor(s / 86400);
+            const h = Math.floor((s % 86400) / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            if (d > 0) this.uptime = d + 'd ' + h + 'h';
+            else if (h > 0) this.uptime = h + 'h ' + m + 'm';
+            else this.uptime = m + 'm ' + (s % 60) + 's';
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // ── Count-up animation for hero-accounts ──────────────────
     const acctEl = document.getElementById('hero-accounts');
