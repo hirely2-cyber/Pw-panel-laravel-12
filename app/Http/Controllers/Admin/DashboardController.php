@@ -25,7 +25,7 @@ class DashboardController extends Controller
     {
         $stats = Cache::remember('admin_stats', 300, function () {
             return [
-                'total_players'    => User::where('role', 'player')->count(),
+                'total_players'    => User::count(),
                 'online_players'   => GameServerService::onlineCount(),
                 'total_income'     => Invoice::where('status', 'paid')->sum('amount'),
                 'total_cubi'       => Invoice::where('type', 'cubi')->where('status', 'paid')->sum('cubi_amount'),
