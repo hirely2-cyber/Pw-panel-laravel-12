@@ -168,6 +168,23 @@
                 @endif
             </a>
 
+            {{-- Mobile-only center logo (footer logo) --}}
+            <a href="{{ route('home') }}" class="pw-nav__brand-mobile">
+                @php $__mFooterLogo = \App\Models\Setting::get('site_footer_logo'); @endphp
+                @if($__mFooterLogo)
+                    <img src="{{ Storage::url($__mFooterLogo) }}" alt="{{ $__siteName }}" class="pw-nav__logo-mobile-img">
+                @else
+                    <svg viewBox="0 0 140 50" fill="none" width="100" xmlns="http://www.w3.org/2000/svg">
+                        <defs><linearGradient id="mlg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e8b84b"/><stop offset="100%" stop-color="#9a6820"/></linearGradient></defs>
+                        <path d="M20 6 L10 22 L20 38 L30 22 Z" fill="url(#mlg)" opacity=".8"/>
+                        <path d="M20 12 L15 22 L20 32 L25 22 Z" fill="#141414"/>
+                        <circle cx="20" cy="22" r="4.5" fill="url(#mlg)"/>
+                        <text x="38" y="20" font-family="Cinzel,serif" font-size="12" font-weight="700" fill="url(#mlg)">{{ $__siteName }}</text>
+                        <text x="38" y="33" font-family="Exo 2,sans-serif" font-size="7.5" fill="#4a6070" letter-spacing="2">PRIVATE SERVER</text>
+                    </svg>
+                @endif
+            </a>
+
             {{-- Desktop Nav Links --}}
             <ul class="pw-nav__links">
                 <li><a href="{{ route('home') }}" class="pw-nav__link {{ request()->routeIs('home') ? 'is-active' : '' }}">
@@ -731,7 +748,7 @@
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span>{{ __('main.nav_home') }}</span>
         </a>
-        <a href="{{ route('donate') }}" class="pw-mobile-nav__item {{ request()->routeIs('donate') ? 'pw-mobile-nav__item--active' : '' }}">
+        <a href="{{ route('cubi-shop') }}" class="pw-mobile-nav__item {{ request()->routeIs('cubi-shop*') ? 'pw-mobile-nav__item--active' : '' }}">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             <span>{{ __('main.nav_topup') }}</span>
         </a>
