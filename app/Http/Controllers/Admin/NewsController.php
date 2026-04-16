@@ -12,6 +12,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\News;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -61,7 +62,7 @@ class NewsController extends Controller
         }
 
         if ($request->hasFile('thumbnail')) {
-            $data['thumbnail'] = $request->file('thumbnail')->store('news', 'public');
+            $data['thumbnail'] = ImageOptimizer::storeAsWebp($request->file('thumbnail'), 'news');
         }
 
         News::create($data);
@@ -96,7 +97,7 @@ class NewsController extends Controller
         }
 
         if ($request->hasFile('thumbnail')) {
-            $data['thumbnail'] = $request->file('thumbnail')->store('news', 'public');
+            $data['thumbnail'] = ImageOptimizer::storeAsWebp($request->file('thumbnail'), 'news');
         }
 
         $news->update($data);

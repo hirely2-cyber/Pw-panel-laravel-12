@@ -12,6 +12,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -50,7 +51,7 @@ class SettingController extends Controller
             'site_hero_bg'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'site_auth_bg'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'site_favicon'            => 'nullable|file|mimes:ico,png,svg|max:512',
-            'seo_og_image'            => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'seo_og_image'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'site_name'               => 'nullable|string|max:50',
             'site_tagline'            => 'nullable|string|max:50',
             'site_description'        => 'nullable|string|max:200',
@@ -74,7 +75,9 @@ class SettingController extends Controller
                 if ($old && Storage::disk('public')->exists($old)) {
                     Storage::disk('public')->delete($old);
                 }
-                $path = $request->file($key)->store("settings/{$key}", 'public');
+                $path = ($key === 'site_favicon')
+                    ? $request->file($key)->store("settings/{$key}", 'public')
+                    : ImageOptimizer::storeAsWebp($request->file($key), "settings/{$key}");
                 Setting::set($key, $path, 'site');
             } elseif ($request->input("remove_{$key}")) {
                 $old = Setting::get($key);

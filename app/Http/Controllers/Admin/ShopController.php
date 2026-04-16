@@ -12,6 +12,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ShopItem;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -46,7 +47,7 @@ class ShopController extends Controller
         $data['is_active'] = $request->boolean('is_active', true);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('shop', 'public');
+            $data['image'] = ImageOptimizer::storeAsWebp($request->file('image'), 'shop');
         }
 
         ShopItem::create($data);
@@ -76,7 +77,7 @@ class ShopController extends Controller
         $data['is_active'] = $request->boolean('is_active', true);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('shop', 'public');
+            $data['image'] = ImageOptimizer::storeAsWebp($request->file('image'), 'shop');
         }
 
         $shop->update($data);
