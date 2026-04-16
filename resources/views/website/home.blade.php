@@ -18,7 +18,7 @@
     {{-- Background --}}
     <div class="pw-hero__bg" aria-hidden="true">
         @if($heroBg)
-            <img src="{{ Storage::url($heroBg) }}" class="pw-hero__bg-img" alt="">
+            <img src="{{ Storage::url($heroBg) }}" class="pw-hero__bg-img" alt="" fetchpriority="high" loading="eager">
         @else
         <svg class="pw-hero__bg-svg" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -620,8 +620,11 @@ function pwServerStatus() {
         _lastFetch: 0,
         _timer: null,
         init() {
-            this.fetch();
-            setInterval(() => this.fetch(), 30000);
+            // Defer API call until after page renders to avoid blocking LCP
+            setTimeout(() => {
+                this.fetch();
+                setInterval(() => this.fetch(), 30000);
+            }, 500);
             // Tick uptime every second
             this._timer = setInterval(() => this._tick(), 1000);
         },
