@@ -271,7 +271,7 @@
             <div style="margin-top:1.8rem;">
                 <button type="submit" class="pw-btn pw-btn--gold pw-btn--lg"
                         :disabled="!cubiInput || cubiInput < minCubi || !channel"
-                        style="width:100%;justify-content:center;background:linear-gradient(135deg,#9a6820,#c8972a);border-color:#c8972a;">
+                        style="width:100%;justify-content:center;">
                     <svg viewBox="0 0 20 20" fill="none" width="16"><path d="M17 10l-4-7H7L3 10l4 7h6l4-7z" stroke="currentColor" stroke-width="1.3"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.3"/></svg>
                     {{ __('main.cubi_buy_btn') }}
                 </button>

@@ -191,16 +191,27 @@
     display: flex;
     align-items: center;
     gap: .6rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid rgba(184,134,11,.25);
-    color: #d4a860;
+    margin: 0 0 1.5rem;
+    padding: .7rem 1rem;
+    border-bottom: 1px solid #a66b42;
+    border-radius: 10px 10px 0 0;
+    color: #1a0f00;
+    text-shadow: 0 1px 0 rgba(255,255,255,.25);
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0px, transparent 2px, transparent 4px),
+      radial-gradient(55% 125% at 46% 13%, #ffe4c2 0%, rgba(196,157,109,0) 100%),
+      linear-gradient(268deg, #e7dacb 0%, #c59768 24%, #7f4f2c 51%, #a66b42 78%, #c49d6d 100%);
+    background-blend-mode: overlay, normal, normal;
+    background-size: cover;
+    background-position: center;
 }
 .pw-sysreq__header h3 {
     font-family: 'Cinzel', serif;
-    font-size: 1.15rem;
+    font-size: .85rem;
     font-weight: 700;
-    color: #d4a860;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #1a0f00;
     margin: 0;
 }
 .pw-sysreq__table-wrap {
@@ -214,13 +225,21 @@
     font-size: .88rem;
 }
 .pw-sysreq__table thead tr {
-    background: rgba(184,134,11,.08);
-    border-bottom: 2px solid rgba(184,134,11,.2);
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0px, transparent 2px, transparent 4px),
+      radial-gradient(55% 125% at 46% 13%, #ffe4c2 0%, rgba(196,157,109,0) 100%),
+      linear-gradient(268deg, #e7dacb 0%, #c59768 24%, #7f4f2c 51%, #a66b42 78%, #c49d6d 100%);
+    background-blend-mode: overlay, normal, normal;
+    background-size: cover;
+    background-position: center;
+    border-bottom: 1px solid #a66b42;
 }
 .pw-sysreq__table th {
     padding: .9rem 1.2rem;
     text-align: left;
-    font-weight: 600;
+    font-weight: 700;
+    color: #1a0f00;
+    text-shadow: 0 1px 0 rgba(255,255,255,.25);
 }
 .pw-sysreq__badge {
     display: inline-block;
@@ -232,14 +251,14 @@
     border-radius: 4px;
 }
 .pw-sysreq__badge--min {
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.12);
-    color: var(--pw-text);
+    background: rgba(45,36,22,.2);
+    border: 1px solid rgba(45,36,22,.25);
+    color: #1a0f00;
 }
 .pw-sysreq__badge--rec {
-    background: rgba(184,134,11,.15);
-    border: 1px solid rgba(184,134,11,.35);
-    color: #d4a860;
+    background: rgba(45,36,22,.3);
+    border: 1px solid rgba(45,36,22,.35);
+    color: #1a0f00;
 }
 .pw-sysreq__table tbody tr {
     border-bottom: 1px solid var(--pw-border);
@@ -297,14 +316,17 @@
 
 /* Light theme */
 [data-theme="light"] .pw-sysreq__header {
-    color: #8a6020;
-    border-bottom-color: rgba(184,134,11,.2);
+    color: #1a0f00;
 }
-[data-theme="light"] .pw-sysreq__header h3 { color: #8a6020; }
+[data-theme="light"] .pw-sysreq__header h3 { color: #1a0f00; }
 [data-theme="light"] .pw-sysreq__table-wrap { border-color: rgba(0,0,0,.1); }
 [data-theme="light"] .pw-sysreq__table thead tr {
-    background: rgba(184,134,11,.06);
-    border-bottom-color: rgba(184,134,11,.15);
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0px, transparent 2px, transparent 4px),
+      radial-gradient(55% 125% at 46% 13%, #ffe4c2 0%, rgba(196,157,109,0) 100%),
+      linear-gradient(268deg, #e7dacb 0%, #c59768 24%, #7f4f2c 51%, #a66b42 78%, #c49d6d 100%);
+    background-blend-mode: overlay, normal, normal;
+    border-bottom-color: #a66b42;
 }
 [data-theme="light"] .pw-sysreq__badge--min {
     background: rgba(0,0,0,.04);
