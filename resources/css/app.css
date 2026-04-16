@@ -2329,6 +2329,110 @@ button { font-family: inherit; }
   box-shadow: 0 4px 12px rgba(184,134,11,.12);
 }
 
+/* ────────────────── DISCORD CARD ──────────────────── */
+.pw-discord-card__body {
+  padding: .8rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.pw-discord-card__server {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+
+.pw-discord-card__name {
+  font-family: 'Cinzel', serif;
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--pw-text-light);
+}
+
+.pw-discord-card__status {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .72rem;
+  color: var(--pw-text-muted);
+}
+
+.pw-discord-card__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34,197,94,.5);
+}
+
+.pw-discord-card__members {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.pw-discord-card__member {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .25rem .4rem;
+  border-radius: 6px;
+  transition: background .15s;
+}
+
+.pw-discord-card__member:hover {
+  background: rgba(255,255,255,.04);
+}
+
+.pw-discord-card__member img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.pw-discord-card__member-name {
+  flex: 1;
+  font-size: .8rem;
+  color: var(--pw-text-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pw-discord-card__member-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pw-discord-card__member-dot--online { background: #22c55e; }
+.pw-discord-card__member-dot--idle { background: #f59e0b; }
+.pw-discord-card__member-dot--dnd { background: #ef4444; }
+
+.pw-discord-card__empty {
+  font-size: .78rem;
+  color: var(--pw-text-muted);
+  text-align: center;
+  margin: 0;
+  padding: .5rem 0;
+}
+
+.pw-discord-card__join {
+  width: 100%;
+  justify-content: center;
+  font-size: .78rem;
+  padding: .5rem .8rem;
+  margin-top: .2rem;
+}
+
+/* Light mode */
+[data-theme="light"] .pw-discord-card__member:hover {
+  background: rgba(0,0,0,.04);
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .pw-news-layout {
@@ -7562,4 +7666,205 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 [data-theme="light"] .pw-cubi-stat--neutral {
   background: rgba(0,0,0,.03);
   border: 1px solid rgba(0,0,0,.1);
+}
+
+/* ════════════════════════════════════════════════════
+   FLOATING WIDGETS: Livechat, Back-to-Top, Mobile Nav
+   ════════════════════════════════════════════════════ */
+
+/* ── Livechat (WhatsApp) ── */
+.pw-livechat {
+  position: fixed;
+  bottom: 28px;
+  left: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem 1.1rem .55rem .65rem;
+  border-radius: 50px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0px, transparent 2px, transparent 4px),
+    radial-gradient(55% 125% at 46% 13%, #ffe4c2 0%, rgba(196,157,109,0) 100%),
+    linear-gradient(268deg, #e7dacb 0%, #c59768 24%, #7f4f2c 51%, #a66b42 78%, #c49d6d 100%);
+  background-blend-mode: overlay, normal, normal;
+  color: #1a0f00;
+  text-decoration: none;
+  box-shadow: 0 4px 18px rgba(127,79,44,.35);
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  animation: pw-livechat-bounce 2s ease-in-out infinite;
+}
+.pw-livechat:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 6px 24px rgba(127,79,44,.5);
+  animation: none;
+}
+.pw-livechat__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50px;
+  background: inherit;
+  z-index: -1;
+  animation: pw-livechat-pulse 2.5s ease-out infinite;
+  opacity: 0;
+}
+.pw-livechat__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.18);
+  flex-shrink: 0;
+}
+.pw-livechat__label {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: .8rem;
+  letter-spacing: .03em;
+  text-shadow: 0 1px 0 rgba(255,255,255,.25);
+}
+
+@keyframes pw-livechat-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes pw-livechat-pulse {
+  0% { transform: scale(1); opacity: .5; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* ── Back to Top ── */
+.pw-back-to-top {
+  position: fixed;
+  bottom: 28px;
+  right: 20px;
+  z-index: 1000;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0px, transparent 2px, transparent 4px),
+    radial-gradient(55% 125% at 46% 13%, #ffe4c2 0%, rgba(196,157,109,0) 100%),
+    linear-gradient(268deg, #e7dacb 0%, #c59768 24%, #7f4f2c 51%, #a66b42 78%, #c49d6d 100%);
+  background-blend-mode: overlay, normal, normal;
+  color: #1a0f00;
+  box-shadow: 0 4px 14px rgba(127,79,44,.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px);
+  transition: opacity .3s, visibility .3s, transform .3s, box-shadow .2s;
+}
+.pw-back-to-top--show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.pw-back-to-top:hover {
+  box-shadow: 0 6px 22px rgba(127,79,44,.5);
+  transform: translateY(-3px);
+}
+
+/* ── Mobile Bottom Nav ── */
+.pw-mobile-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .pw-mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100;
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch;
+    height: 60px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0px, transparent 2px, transparent 4px),
+      radial-gradient(55% 125% at 46% 13%, #ffe4c2 0%, rgba(196,157,109,0) 100%),
+      linear-gradient(268deg, #e7dacb 0%, #c59768 24%, #7f4f2c 51%, #a66b42 78%, #c49d6d 100%);
+    background-blend-mode: overlay, normal, normal;
+    border-top: 1px solid rgba(166,107,66,.5);
+    box-shadow: 0 -2px 16px rgba(0,0,0,.25);
+  }
+  .pw-mobile-nav__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-decoration: none;
+    color: #3d2510;
+    font-size: .62rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    padding: 4px 0;
+    position: relative;
+    transition: color .15s, transform .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pw-mobile-nav__item span {
+    line-height: 1;
+    text-shadow: 0 1px 0 rgba(255,255,255,.2);
+  }
+  .pw-mobile-nav__item svg {
+    opacity: .7;
+    transition: opacity .15s;
+  }
+  .pw-mobile-nav__item--active {
+    color: #1a0f00;
+  }
+  .pw-mobile-nav__item--active svg {
+    opacity: 1;
+  }
+  .pw-mobile-nav__item--active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 2.5px;
+    border-radius: 0 0 4px 4px;
+    background: #7f4f2c;
+  }
+  .pw-mobile-nav__item:active {
+    transform: scale(.92);
+  }
+
+  /* Shift floating widgets above mobile nav */
+  .pw-livechat {
+    bottom: 76px;
+  }
+  .pw-back-to-top {
+    bottom: 76px;
+  }
+
+  /* Add bottom padding to body so content isn't hidden behind nav */
+  body {
+    padding-bottom: 64px;
+  }
+}
+
+/* Light mode adjustments */
+[data-theme="light"] .pw-livechat,
+[data-theme="light"] .pw-back-to-top,
+[data-theme="light"] .pw-mobile-nav {
+  color: #1a0f00;
+}
+[data-theme="light"] .pw-mobile-nav__item {
+  color: #3d2510;
+}
+[data-theme="light"] .pw-mobile-nav__item--active {
+  color: #1a0f00;
 }

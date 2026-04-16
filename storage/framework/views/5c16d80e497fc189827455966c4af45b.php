@@ -708,6 +708,64 @@
         setInterval(updateServerStatus, 30000);
     })();
     </script>
+
+    
+    <?php $waFloat = \App\Models\Setting::get('social_whatsapp', null); ?>
+
+    
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($waFloat): ?>
+    <a href="https://wa.me/<?php echo e($waFloat); ?>" target="_blank" rel="noopener" class="pw-livechat" aria-label="Livechat">
+        <span class="pw-livechat__pulse"></span>
+        <span class="pw-livechat__icon">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.05 21.785h-.01a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.981.998-3.648-.235-.374A9.86 9.86 0 0 1 2.15 12.01C2.15 6.558 6.587 2.122 12.05 2.122c2.647 0 5.137 1.033 7.007 2.908a9.85 9.85 0 0 1 2.893 7.012c-.004 5.452-4.44 9.888-9.9 9.888v-.145zm8.413-18.3A11.82 11.82 0 0 0 12.05.002C5.495.002.16 5.335.157 11.892c-.001 2.096.547 4.142 1.588 5.946L.057 24l6.305-1.654a11.88 11.88 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.82 11.82 0 0 0-3.48-8.414z"/></svg>
+        </span>
+        <span class="pw-livechat__label">Livechat</span>
+    </a>
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+
+    
+    <button class="pw-back-to-top" id="backToTop" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
+    <script>
+    (function(){
+        var btn = document.getElementById('backToTop');
+        window.addEventListener('scroll', function(){
+            btn.classList.toggle('pw-back-to-top--show', window.scrollY > 400);
+        }, {passive:true});
+    })();
+    </script>
+
+    
+    <nav class="pw-mobile-nav" aria-label="Mobile navigation">
+        <a href="<?php echo e(route('home')); ?>" class="pw-mobile-nav__item <?php echo e(request()->routeIs('home') ? 'pw-mobile-nav__item--active' : ''); ?>">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span><?php echo e(__('main.nav_home')); ?></span>
+        </a>
+        <a href="<?php echo e(route('donate')); ?>" class="pw-mobile-nav__item <?php echo e(request()->routeIs('donate') ? 'pw-mobile-nav__item--active' : ''); ?>">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <span><?php echo e(__('main.nav_topup')); ?></span>
+        </a>
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->guard()->check()): ?>
+        <a href="<?php echo e(route('dashboard')); ?>" class="pw-mobile-nav__item <?php echo e(request()->routeIs('dashboard') ? 'pw-mobile-nav__item--active' : ''); ?>">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span><?php echo e(__('main.nav_dashboard')); ?></span>
+        </a>
+        <?php else: ?>
+        <a href="<?php echo e(route('login')); ?>" class="pw-mobile-nav__item <?php echo e(request()->routeIs('login') ? 'pw-mobile-nav__item--active' : ''); ?>">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <span><?php echo e(__('main.nav_login')); ?></span>
+        </a>
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+        <a href="<?php echo e(route('event')); ?>" class="pw-mobile-nav__item <?php echo e(request()->routeIs('event') ? 'pw-mobile-nav__item--active' : ''); ?>">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+            <span><?php echo e(__('main.nav_event')); ?></span>
+        </a>
+        <a href="<?php echo e(route('news.index')); ?>" class="pw-mobile-nav__item <?php echo e(request()->routeIs('news.*') ? 'pw-mobile-nav__item--active' : ''); ?>">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+            <span><?php echo e(__('main.nav_news')); ?></span>
+        </a>
+    </nav>
 </body>
 </html>
 <?php /**PATH /var/www/pw-panel/resources/views/layouts/app.blade.php ENDPATH**/ ?>
