@@ -141,6 +141,11 @@ Route::get('/donatur', [HomeController::class, 'donatur'])->name('donatur');
 Route::get('/event', [HomeController::class, 'event'])->name('event');
 Route::get('/download', [HomeController::class, 'download'])->name('download');
 
+// Promo / Landing pages (FB Ads)
+Route::get('/promo/launch', function () {
+    return view('website.promo-launch');
+})->name('promo.launch');
+
 // Legal pages
 // Sitemap
 Route::get('/sitemap.xml', function () {
