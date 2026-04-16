@@ -620,11 +620,16 @@ function pwServerStatus() {
         _lastFetch: 0,
         _timer: null,
         init() {
-            // Defer API call until after page renders to avoid blocking LCP
-            setTimeout(() => {
+            // Wait until browser is idle to avoid blocking LCP critical path
+            const start = () => {
                 this.fetch();
                 setInterval(() => this.fetch(), 30000);
-            }, 500);
+            };
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(start, { timeout: 3000 });
+            } else {
+                setTimeout(start, 2000);
+            }
             // Tick uptime every second
             this._timer = setInterval(() => this._tick(), 1000);
         },
