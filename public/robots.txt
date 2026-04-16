@@ -1,2 +1,30 @@
 User-agent: *
-Disallow:
+Allow: /
+
+# Block admin & internal areas
+Disallow: /admin/
+Disallow: /gm/
+Disallow: /partner/
+Disallow: /cp_8f3x91/
+Disallow: /myadmin_59701e/
+
+# Block auth pages
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+
+# Block API endpoints
+Disallow: /api/
+
+# Block user-specific pages
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /donate
+Disallow: /shop
+Disallow: /cubi-shop
+Disallow: /vote
+Disallow: /voucher
+Disallow: /services
+
+Sitemap: https://pvesea.com/sitemap.xml
