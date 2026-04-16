@@ -146,6 +146,9 @@ Route::get('/promo/launch', function () {
     return view('website.promo-launch');
 })->name('promo.launch');
 
+// Pre-Launch Referral Ranking (public)
+Route::get('/referral-ranking', [HomeController::class, 'referralRanking'])->name('referral.ranking');
+
 // Legal pages
 // Sitemap
 Route::get('/sitemap.xml', function () {
@@ -396,6 +399,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'webadmin'])->group(
         Route::resource('events', Admin\EventController::class);
         Route::post('events/{event}/toggle', [Admin\EventController::class, 'toggle'])->name('events.toggle');
         Route::post('events/{event}/distribute', [Admin\EventController::class, 'distribute'])->name('events.distribute');
+        Route::post('events/{event}/distribute-referrals', [Admin\EventController::class, 'distributeReferrals'])->name('events.distribute-referrals');
 
     });
 

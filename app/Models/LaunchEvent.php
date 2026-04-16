@@ -10,6 +10,7 @@ class LaunchEvent extends Model
     protected $table = 'pw_events';
 
     protected $fillable = [
+        'type',
         'title',
         'title_en',
         'description',
@@ -21,14 +22,17 @@ class LaunchEvent extends Model
         'prize_rank1',
         'prize_rank2',
         'prize_rank3',
+        'referral_tiers',
+        'referral_req_level',
         'status',
         'start_at',
         'end_at',
     ];
 
     protected $casts = [
-        'start_at' => 'datetime',
-        'end_at'   => 'datetime',
+        'start_at'       => 'datetime',
+        'end_at'         => 'datetime',
+        'referral_tiers' => 'array',
     ];
 
     public function localizedTitle(): string
@@ -50,6 +54,16 @@ class LaunchEvent extends Model
     public function participants(): HasMany
     {
         return $this->hasMany(EventParticipant::class, 'event_id');
+    }
+
+    public function referralMilestones(): HasMany
+    {
+        return $this->hasMany(ReferralMilestone::class, 'event_id');
+    }
+
+    public function isPreLaunch(): bool
+    {
+        return $this->type === 'pre_launch';
     }
 
     public function qualifiedParticipants(): HasMany

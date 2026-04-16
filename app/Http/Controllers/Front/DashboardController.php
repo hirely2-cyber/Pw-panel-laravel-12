@@ -11,6 +11,8 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use App\Models\LaunchEvent;
+use App\Models\ReferralMilestone;
 use App\Models\ReferralPartner;
 use App\Models\ReferralReward;
 use Illuminate\Http\RedirectResponse;
@@ -255,7 +257,46 @@ class DashboardController extends Controller
             ];
         }
 
-        return view('front.profile', compact('user', 'characters', 'cubiCoins', 'referralStats'));
+        // Pre-Launch Event: referral milestone progress
+        $preLaunchEvent = null;
+        $preLaunchMilestones = collect();
+        $preLaunchQualified = 0;
+
+        $activePreLaunch = LaunchEvent::where('type', 'pre_launch')
+            ->whereIn('status', ['active', 'ended', 'distributed'])
+            ->orderByRaw("FIELD(status, 'active', 'ended', 'distributed')")
+            ->latest('start_at')
+            ->first();
+
+        if ($activePreLaunch) {
+            $preLaunchEvent = $activePreLaunch;
+            $reqLevel = $activePreLaunch->referral_req_level ?? 50;
+
+            // Count qualified referrals (referred users with character at req level)
+            $referredIds = $user->referrals()->pluck('ID')->toArray();
+            if (!empty($referredIds)) {
+                try {
+                    $preLaunchQualified = DB::connection('mysql_game')
+                        ->table('roles')
+                        ->whereIn('account_id', $referredIds)
+                        ->selectRaw('account_id, MAX(role_level) as max_level')
+                        ->groupBy('account_id')
+                        ->havingRaw('MAX(role_level) >= ?', [$reqLevel])
+                        ->count();
+                } catch (\Throwable $e) {}
+            }
+
+            // User's distributed milestones for this event
+            $preLaunchMilestones = ReferralMilestone::where('event_id', $activePreLaunch->id)
+                ->where('user_id', $user->ID)
+                ->where('distributed', true)
+                ->get();
+        }
+
+        return view('front.profile', compact(
+            'user', 'characters', 'cubiCoins', 'referralStats',
+            'preLaunchEvent', 'preLaunchMilestones', 'preLaunchQualified'
+        ));
     }
 
     public function updateProfile(Request $request): RedirectResponse

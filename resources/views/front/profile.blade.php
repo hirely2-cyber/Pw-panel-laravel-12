@@ -633,10 +633,74 @@
         </div>
         @endif
 
+        {{-- Pre-Launch Event Milestone Progress --}}
+        @if(isset($preLaunchEvent) && $preLaunchEvent)
+        <div class="pw-profile-card" style="margin-top:1.25rem;">
+            <div class="pw-profile-card__header">
+                <svg viewBox="0 0 16 16" fill="none" width="14" aria-hidden="true"><path d="M8 1l2.09 4.26L15 6.27l-3.5 3.41.82 4.82L8 12.27l-4.32 2.23.82-4.82L1 6.27l4.91-.71L8 1z" stroke="#c8972a" stroke-width="1.2" stroke-linejoin="round"/></svg>
+                Pre-Launch Referral Milestones
+                @if($preLaunchEvent->status === 'active')
+                <span class="pw-badge pw-badge--success" style="margin-left:.5rem;">Aktif</span>
+                @elseif($preLaunchEvent->status === 'ended')
+                <span class="pw-badge pw-badge--warning" style="margin-left:.5rem;">Berakhir</span>
+                @endif
+            </div>
+
+            <div style="background:rgba(200,151,42,.06);border:1px solid rgba(200,151,42,.12);border-radius:8px;padding:.8rem 1rem;margin-bottom:1rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+                    <div>
+                        <div style="font-size:.85rem;color:var(--pw-text-light);font-weight:600;">{{ $preLaunchEvent->title }}</div>
+                        <div style="font-size:.75rem;color:var(--pw-text-muted);">
+                            Syarat: Setiap ID harus punya karakter Level {{ $preLaunchEvent->referral_req_level }}
+                        </div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:1.3rem;font-weight:800;color:#c8972a;">{{ $preLaunchQualified }}</div>
+                        <div style="font-size:.7rem;color:var(--pw-text-muted);">Referral Qualified</div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Milestone Progress --}}
+            <div style="max-width:600px;margin:0 auto;">
+                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem;text-align:center;">
+                    @foreach($preLaunchEvent->referral_tiers ?? [] as $tier)
+                    @php
+                        $reached = $preLaunchQualified >= $tier['count'];
+                        $distributed = $preLaunchMilestones->contains('milestone', $tier['count']);
+                    @endphp
+                    <div style="background:rgba(0,0,0,.35);border:1px solid {{ $distributed ? 'rgba(74,222,128,.25)' : ($reached ? 'rgba(251,191,36,.25)' : 'var(--pw-border)') }};border-radius:6px;padding:.6rem .5rem;min-width:90px;">
+                        <div style="display:block;font-size:1.3rem;font-weight:700;color:{{ $distributed ? '#7deba0' : ($reached ? '#d4a860' : 'var(--pw-gold-light)') }};">
+                            {{ $tier['count'] }}
+                        </div>
+                        <div style="display:block;font-size:.7rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.04em;margin-top:.15rem;">referral</div>
+                        <div style="font-size:.8rem;font-weight:600;color:var(--pw-text-light);margin-top:.25rem;">
+                            {{ number_format($tier['reward']) }} Cubi
+                        </div>
+                        <div style="margin-top:.35rem;">
+                            @if($distributed)
+                            <span class="pw-badge pw-badge--success" style="font-size:.68rem;padding:.15rem .5rem;">Diterima</span>
+                            @elseif($reached)
+                            <span class="pw-badge pw-badge--pending" style="font-size:.68rem;padding:.15rem .5rem;">Tercapai</span>
+                            @else
+                            <span style="font-size:.68rem;color:var(--pw-text-muted);">{{ $preLaunchQualified }}/{{ $tier['count'] }}</span>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+
+            <div style="margin-top:.8rem;text-align:center;">
+                <a href="{{ route('referral.ranking') }}" style="font-size:.82rem;color:#c8972a;text-decoration:none;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                    Lihat Referral Ranking →
+                </a>
+            </div>
+        </div>
+        @endif
+
     </div>
 </section>
-
-{{-- Modal Ganti Password --}}
 <div id="pwModalPassword" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);" onclick="if(event.target===this)pwClosePasswordModal()">
     <div class="pw-profile-card" style="width:90%;max-width:400px;position:relative;margin:0;box-shadow:0 20px 60px rgba(0,0,0,.5);background:var(--pw-bg-card);">
         {{-- Close button --}}

@@ -1,39 +1,76 @@
 @extends('layouts.admin')
 @section('title', 'Buat Event Baru')
 
+@php $type = request('type', 'grand_launch'); @endphp
+
 @section('content')
 <div style="margin-bottom:1rem;">
-    <a href="{{ route('admin.events.index') }}" class="pw-adm-btn pw-adm-btn--ghost pw-adm-btn--sm">← Kembali</a>
+    <a href="{{ route('admin.events.index', ['tab' => $type]) }}" class="pw-adm-btn pw-adm-btn--ghost pw-adm-btn--sm">← Kembali</a>
 </div>
 
 <div class="pw-adm-card">
-    <div class="pw-adm-card__title">Buat Event Baru</div>
+    <div class="pw-adm-card__title">Buat Event {{ $type === 'pre_launch' ? 'Pre-Launching' : 'Grand Launching' }}</div>
 
-    <form method="POST" action="{{ route('admin.events.store') }}">
+    <form method="POST" action="{{ route('admin.events.store') }}" x-data="eventForm()">
         @csrf
+        <input type="hidden" name="type" value="{{ $type }}">
 
         <div style="margin-bottom:1rem;">
             <label class="pw-adm-label">Nama Event (ID)</label>
-            <input type="text" name="title" class="pw-adm-input" value="{{ old('title', 'Grand Launching Event') }}" required>
+            <input type="text" name="title" class="pw-adm-input" value="{{ old('title', $type === 'pre_launch' ? 'Pre-Register Event' : 'Grand Launching Event') }}" required>
             @error('title') <div style="color:#ef4444;font-size:.78rem;margin-top:.3rem;">{{ $message }}</div> @enderror
         </div>
 
         <div style="margin-bottom:1rem;">
             <label class="pw-adm-label">Nama Event (EN)</label>
-            <input type="text" name="title_en" class="pw-adm-input" value="{{ old('title_en', 'Grand Launching Event') }}" placeholder="English title">
-            @error('title_en') <div style="color:#ef4444;font-size:.78rem;margin-top:.3rem;">{{ $message }}</div> @enderror
+            <input type="text" name="title_en" class="pw-adm-input" value="{{ old('title_en') }}" placeholder="English title">
         </div>
 
         <div style="margin-bottom:1rem;">
             <label class="pw-adm-label">Deskripsi (ID)</label>
-            <textarea name="description" class="pw-adm-input" rows="3" style="resize:vertical;">{{ old('description', 'Jadilah yang tercepat mencapai target level & cultivation! 50 pemain tercepat akan mendapatkan hadiah Cubi Gold.') }}</textarea>
+            <textarea name="description" class="pw-adm-input" rows="3" style="resize:vertical;">{{ old('description', $type === 'pre_launch' ? 'Daftar dan ajak teman sebanyak-banyaknya! Dapatkan Cubi Gold berdasarkan jumlah referral yang berhasil.' : 'Jadilah yang tercepat mencapai target level & cultivation! 50 pemain tercepat akan mendapatkan hadiah Cubi Gold.') }}</textarea>
         </div>
 
         <div style="margin-bottom:1rem;">
             <label class="pw-adm-label">Deskripsi (EN)</label>
-            <textarea name="description_en" class="pw-adm-input" rows="3" style="resize:vertical;" placeholder="English description">{{ old('description_en', 'Be the fastest to reach the target level & cultivation! The 50 fastest players will receive Cubi Gold prizes.') }}</textarea>
+            <textarea name="description_en" class="pw-adm-input" rows="3" style="resize:vertical;" placeholder="English description">{{ old('description_en') }}</textarea>
         </div>
 
+        @if($type === 'pre_launch')
+        {{-- ===== PRE-LAUNCH FIELDS ===== --}}
+        <div style="margin-bottom:1rem;">
+            <label class="pw-adm-label">Syarat Level Karakter (untuk validasi referral)</label>
+            <input type="number" name="referral_req_level" class="pw-adm-input" value="{{ old('referral_req_level', 50) }}" min="1" max="150" required>
+            <div style="font-size:.72rem;color:var(--pw-text-muted);margin-top:.3rem;">
+                Setiap ID yang diundang harus punya minimal 1 karakter di level ini agar referral dihitung valid.
+            </div>
+        </div>
+
+        <div style="background:rgba(200,151,42,.06);border:1px solid rgba(200,151,42,.15);border-radius:8px;padding:1rem;margin-bottom:1rem;">
+            <div style="font-size:.85rem;font-weight:700;color:#c8972a;margin-bottom:.8rem;">Referral Reward Tiers (Cubi Gold)</div>
+            <div style="font-size:.78rem;color:var(--pw-text-muted);margin-bottom:.8rem;">
+                Atur milestone: berapa orang yang diajak → berapa Cubi Gold yang didapat.
+            </div>
+
+            <template x-for="(tier, index) in tiers" :key="index">
+                <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:.5rem;margin-bottom:.5rem;align-items:end;">
+                    <div>
+                        <label class="pw-adm-label" x-show="index === 0">Jumlah Referral</label>
+                        <input type="number" :name="'referral_tiers['+index+'][count]'" class="pw-adm-input" x-model.number="tier.count" min="1" required placeholder="10">
+                    </div>
+                    <div>
+                        <label class="pw-adm-label" x-show="index === 0">Reward (Cubi Gold)</label>
+                        <input type="number" :name="'referral_tiers['+index+'][reward]'" class="pw-adm-input" x-model.number="tier.reward" min="1" required placeholder="50">
+                    </div>
+                    <button type="button" @click="tiers.splice(index, 1)" class="pw-adm-btn pw-adm-btn--sm pw-adm-btn--danger" style="margin-bottom:2px;" x-show="tiers.length > 1">&times;</button>
+                </div>
+            </template>
+
+            <button type="button" @click="tiers.push({count: '', reward: ''})" class="pw-adm-btn pw-adm-btn--sm pw-adm-btn--ghost" style="margin-top:.5rem;">+ Tambah Tier</button>
+        </div>
+
+        @else
+        {{-- ===== GRAND LAUNCH FIELDS ===== --}}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
             <div>
                 <label class="pw-adm-label">Syarat Level</label>
@@ -100,6 +137,7 @@
                 upd();
             ">—</div>
         </div>
+        @endif
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
             <div>
@@ -115,4 +153,20 @@
         <button type="submit" class="pw-adm-btn" style="width:100%;">Simpan Event</button>
     </form>
 </div>
+
+@php
+    $defaultTiers = old('referral_tiers', [
+        ['count' => 10, 'reward' => 50],
+        ['count' => 20, 'reward' => 100],
+        ['count' => 30, 'reward' => 150],
+        ['count' => 50, 'reward' => 300],
+    ]);
+@endphp
+<script>
+function eventForm() {
+    return {
+        tiers: @json($defaultTiers)
+    };
+}
+</script>
 @endsection
