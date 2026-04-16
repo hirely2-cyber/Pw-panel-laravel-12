@@ -38,7 +38,13 @@ Route::get('/auth/captcha/refresh', function () {
 })->name('captcha.refresh');
 
 // Live server stats (JSON — public)
-Route::get('/api/online-count', function () {
+Route::get('/api/online-count', function (\Illuminate\Http\Request $request) {
+    // Only allow requests from same origin
+    $referer = $request->headers->get('referer', '');
+    $appUrl  = rtrim(config('app.url'), '/');
+    if ($referer && !str_starts_with($referer, $appUrl)) {
+        return response()->json(['error' => 'Forbidden'], 403);
+    }
     $service = \App\Services\GameServerService::class;
     return response()->json([
         'online'   => $service::onlineCount(),
