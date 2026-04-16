@@ -87,7 +87,12 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Active character selector (AJAX)
 Route::middleware('auth')->group(function () {
-    Route::get('/api/characters', function () {
+    Route::get('/api/characters', function (Request $request) {
+        $referer = $request->headers->get('referer', '');
+        $appUrl  = rtrim(config('app.url'), '/');
+        if (!$referer || !str_starts_with($referer, $appUrl)) {
+            abort(403);
+        }
         return response()->json(auth()->user()->gameCharacters());
     })->name('api.characters');
 
