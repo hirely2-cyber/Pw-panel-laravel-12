@@ -81,7 +81,7 @@
     @keyframes pw-pulse-dot-red{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(1.45);box-shadow:0 0 8px rgba(239,68,68,.9);}}
     /* Light mode overrides */
     [data-theme="light"] .pw-server-badge--loading{background:rgba(0,0,0,.07);border-color:rgba(0,0,0,.18);color:#666;}
-    [data-theme="light"] .pw-server-badge--online{background:rgba(22,163,74,.13);border-color:rgba(22,163,74,.45);color:#15803d;}
+    [data-theme="light"] .pw-server-badge--online{background:rgba(22,163,74,.13);border-color:rgba(22,163,74,.45);color:#166534;}
     [data-theme="light"] .pw-server-badge--offline{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.45);color:#b91c1c;}
     [data-theme="light"] .pw-server-badge--loading .pw-server-badge__dot{background:#999;}
     [data-theme="light"] .pw-server-badge--online .pw-server-badge__dot{background:#16a34a;box-shadow:0 0 5px rgba(22,163,74,.6);}
@@ -544,7 +544,7 @@
             </div>
 
             <div class="pw-footer__col">
-                <h4>{{ __('main.footer_links') }}</h4>
+                <h3>{{ __('main.footer_links') }}</h3>
                 <ul>
                     <li><a href="{{ route('home') }}">{{ __('main.nav_home') }}</a></li>
                     <li><a href="{{ route('home') }}#news">{{ __('main.nav_news') }}</a></li>
@@ -561,7 +561,7 @@
             </div>
 
             <div class="pw-footer__col">
-                <h4>{{ __('main.footer_support') }}</h4>
+                <h3>{{ __('main.footer_support') }}</h3>
                 <ul>
                     @auth
                     <li><a href="{{ route('dashboard') }}">{{ __('main.nav_dashboard') }}</a></li>
