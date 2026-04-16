@@ -77,6 +77,13 @@ Route::get('/event', [HomeController::class, 'event'])->name('event');
 Route::get('/download', [HomeController::class, 'download'])->name('download');
 
 // Legal pages
+// Sitemap
+Route::get('/sitemap.xml', function () {
+    $news = \App\Models\News::select('slug', 'updated_at')->orderByDesc('updated_at')->get();
+    $content = view('sitemap', compact('news'))->render();
+    return response($content, 200)->header('Content-Type', 'application/xml');
+})->name('sitemap');
+
 Route::get('/tos', function () {
     return view('website.tos');
 })->name('tos');
