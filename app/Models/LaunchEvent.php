@@ -23,6 +23,8 @@ class LaunchEvent extends Model
         'prize_rank2',
         'prize_rank3',
         'referral_tiers',
+        'register_rewards',
+        'register_req_level',
         'referral_req_level',
         'status',
         'start_at',
@@ -32,7 +34,9 @@ class LaunchEvent extends Model
     protected $casts = [
         'start_at'       => 'datetime',
         'end_at'         => 'datetime',
-        'referral_tiers' => 'array',
+        'referral_tiers'     => 'array',
+        'register_rewards'   => 'array',
+        'register_req_level' => 'integer',
     ];
 
     public function localizedTitle(): string
@@ -59,6 +63,11 @@ class LaunchEvent extends Model
     public function referralMilestones(): HasMany
     {
         return $this->hasMany(ReferralMilestone::class, 'event_id');
+    }
+
+    public function registerDeliveries(): HasMany
+    {
+        return $this->hasMany(EventRegisterDelivery::class, 'event_id');
     }
 
     public function isPreLaunch(): bool

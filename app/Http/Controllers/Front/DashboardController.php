@@ -536,11 +536,13 @@ class DashboardController extends Controller
                 } catch (\Throwable $e) {
                     continue;
                 }
-            } else {
+            } elseif ($rewardType === 'gold') {
                 DB::table('users')
                     ->where('ID', $user->ID)
                     ->increment('money', $rewardAmount);
             }
+            // 'tunai': no in-game delivery — just recorded in pw_referral_rewards below.
+            // Partner claims earnings via the withdrawal (bonus claim) system.
 
             // Record referrer reward
             ReferralReward::create([

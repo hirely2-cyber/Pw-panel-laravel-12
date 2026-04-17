@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\EventParticipant;
+use App\Models\EventRegisterDelivery;
 use App\Models\LaunchEvent;
 use App\Models\ReferralMilestone;
 use App\Models\User;
@@ -52,10 +53,14 @@ class EventController extends Controller
             ];
         } else {
             $rules += [
-                'referral_req_level' => 'required|integer|min:1|max:150',
-                'referral_tiers'     => 'required|array|min:1',
-                'referral_tiers.*.count'  => 'required|integer|min:1',
-                'referral_tiers.*.reward' => 'required|integer|min:1',
+                'referral_req_level'          => 'required|integer|min:1|max:150',
+                'referral_tiers'              => 'required|array|min:1',
+                'referral_tiers.*.count'      => 'required|integer|min:1',
+                'referral_tiers.*.reward'     => 'required|integer|min:1',
+                'register_rewards'            => 'nullable|array',
+                'register_rewards.*.label'    => 'required_with:register_rewards|string|max:100',
+                'register_rewards.*.amount'   => 'required_with:register_rewards|integer|min:1',
+                'register_req_level'          => 'nullable|integer|min:1|max:150',
             ];
         }
 
@@ -91,7 +96,9 @@ class EventController extends Controller
 
             $milestones = $event->referralMilestones()->with('user')->latest()->get();
 
-            return view('admin.events.show-prelaunch', compact('event', 'referrers', 'totalRegistered', 'totalReferrals', 'milestones'));
+            $registerDeliveredCount = $event->registerDeliveries()->count();
+
+            return view('admin.events.show-prelaunch', compact('event', 'referrers', 'totalRegistered', 'totalReferrals', 'milestones', 'registerDeliveredCount'));
         }
 
         $participants = $event->participants()
@@ -124,10 +131,14 @@ class EventController extends Controller
 
         if ($event->isPreLaunch()) {
             $rules += [
-                'referral_req_level' => 'required|integer|min:1|max:150',
-                'referral_tiers'     => 'required|array|min:1',
-                'referral_tiers.*.count'  => 'required|integer|min:1',
-                'referral_tiers.*.reward' => 'required|integer|min:1',
+                'referral_req_level'          => 'required|integer|min:1|max:150',
+                'referral_tiers'              => 'required|array|min:1',
+                'referral_tiers.*.count'      => 'required|integer|min:1',
+                'referral_tiers.*.reward'     => 'required|integer|min:1',
+                'register_rewards'            => 'nullable|array',
+                'register_rewards.*.label'    => 'required_with:register_rewards|string|max:100',
+                'register_rewards.*.amount'   => 'required_with:register_rewards|integer|min:1',
+                'register_req_level'          => 'nullable|integer|min:1|max:150',
             ];
         } else {
             $rules += [
@@ -263,25 +274,28 @@ class EventController extends Controller
             return back()->with('error', 'Referral tiers belum diatur.');
         }
 
-        // Get all referrers with their referral counts
         $reqLevel = $event->referral_req_level;
 
         $referrers = User::select('users.ID', 'users.name')
-            ->whereExists(function ($q) {
+            ->whereExists(function ($q) use ($event) {
                 $q->selectRaw('1')
                     ->from('users as r')
-                    ->whereColumn('r.referred_by', 'users.ID');
+                    ->whereColumn('r.referred_by', 'users.ID')
+                    ->whereBetween('r.creatime', [$event->start_at, $event->end_at]);
             })
             ->get();
 
-        // For each referrer, count only QUALIFIED referrals (referred user has char at req level)
         $distributed = 0;
 
         foreach ($referrers as $referrer) {
-            $referredIds = User::where('referred_by', $referrer->ID)->pluck('ID')->toArray();
+            // Only count referrals that registered DURING the event window
+            $referredIds = User::where('referred_by', $referrer->ID)
+                ->whereBetween('creatime', [$event->start_at, $event->end_at])
+                ->pluck('ID')->toArray();
+
             if (empty($referredIds)) continue;
 
-            // Count referred users who have at least 1 character at the required level
+            // Count referred users who have a character at the required level
             $qualifiedCount = DB::connection('mysql_game')
                 ->table('roles')
                 ->whereIn('account_id', $referredIds)
@@ -292,46 +306,60 @@ class EventController extends Controller
 
             if ($qualifiedCount < collect($tiers)->min('count')) continue;
 
+            // Compute base SN once per referrer to avoid race condition across tier inserts
+            $baseSn = (int)(DB::connection('mysql_game')
+                ->table('usecashnow')
+                ->where('userid', $referrer->ID)
+                ->where('zoneid', 1)
+                ->min('sn') ?? 0);
+            $snOffset = 0;
+
             foreach ($tiers as $tier) {
-                if ($qualifiedCount >= $tier['count']) {
-                    // Check if milestone already claimed
-                    $exists = ReferralMilestone::where('event_id', $event->id)
-                        ->where('user_id', $referrer->ID)
-                        ->where('milestone', $tier['count'])
-                        ->exists();
+                if ($qualifiedCount < $tier['count']) continue;
 
-                    if (! $exists) {
-                        $cashValue = $tier['reward'] * 100;
+                $exists = ReferralMilestone::where('event_id', $event->id)
+                    ->where('user_id', $referrer->ID)
+                    ->where('milestone', $tier['count'])
+                    ->exists();
 
-                        $nextSn = (DB::connection('mysql_game')
-                            ->table('usecashnow')
-                            ->where('userid', $referrer->ID)
-                            ->where('zoneid', 1)
-                            ->min('sn') ?? 0) - 1;
+                if ($exists) continue;
 
-                        DB::connection('mysql_game')->table('usecashnow')->insert([
-                            'userid'   => $referrer->ID,
-                            'zoneid'   => 1,
-                            'sn'       => $nextSn,
-                            'aid'      => 1,
-                            'point'    => 4,
-                            'cash'     => $cashValue,
-                            'status'   => 0,
-                            'creatime' => now(),
-                        ]);
+                $cashValue = (int) $tier['reward'] * 100;
+                $snOffset--;
+                $sn = $baseSn + $snOffset;
 
-                        ReferralMilestone::create([
-                            'event_id'       => $event->id,
-                            'user_id'        => $referrer->ID,
-                            'milestone'      => $tier['count'],
-                            'reward_amount'  => $tier['reward'],
-                            'distributed'    => true,
-                            'distributed_at' => now(),
-                        ]);
+                // Queue Cubi delivery to game
+                DB::connection('mysql_game')->table('usecashnow')->insert([
+                    'userid'   => $referrer->ID,
+                    'zoneid'   => 1,
+                    'sn'       => $sn,
+                    'aid'      => 1,
+                    'point'    => 4,
+                    'cash'     => $cashValue,
+                    'status'   => 0,
+                    'creatime' => now(),
+                ]);
 
-                        $distributed++;
-                    }
-                }
+                // Record in pw_event_deliveries so CubiMonitor identifies source as "Event Reward"
+                DB::table('pw_event_deliveries')->insert([
+                    'event_id'   => $event->id,
+                    'user_id'    => $referrer->ID,
+                    'rank'       => (int) $tier['count'],
+                    'amount'     => (int) $tier['reward'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                ReferralMilestone::create([
+                    'event_id'       => $event->id,
+                    'user_id'        => $referrer->ID,
+                    'milestone'      => $tier['count'],
+                    'reward_amount'  => $tier['reward'],
+                    'distributed'    => true,
+                    'distributed_at' => now(),
+                ]);
+
+                $distributed++;
             }
         }
 
@@ -339,6 +367,112 @@ class EventController extends Controller
             $event->update(['status' => 'distributed']);
         }
 
-        return back()->with('success', "Berhasil distribute {$distributed} milestone rewards.");
+        return back()->with('success', "Berhasil distribute {$distributed} milestone referral rewards.");
+    }
+
+    public function distributeRegisterRewards(LaunchEvent $event)
+    {
+        if (! $event->isPreLaunch()) {
+            return back()->with('error', 'Fitur ini hanya untuk event Pre-Launch.');
+        }
+
+        if (! in_array($event->status, ['ended', 'distributed'])) {
+            return back()->with('error', 'Event harus dalam status "ended" untuk distribute hadiah register.');
+        }
+
+        $rewards = $event->register_rewards ?? [];
+        if (empty($rewards)) {
+            return back()->with('error', 'Hadiah register belum diatur di event ini.');
+        }
+
+        $reqLevel = $event->register_req_level ?? 50;
+
+        // Users registered during event who haven't been distributed yet
+        $alreadyDistributed = EventRegisterDelivery::where('event_id', $event->id)
+            ->pluck('user_id')->toArray();
+
+        $users = User::whereBetween('creatime', [$event->start_at, $event->end_at])
+            ->when(!empty($alreadyDistributed), fn($q) => $q->whereNotIn('ID', $alreadyDistributed))
+            ->select('ID', 'name')
+            ->get();
+
+        if ($users->isEmpty()) {
+            return back()->with('info', 'Semua player yang terdaftar selama event sudah didistribusi.');
+        }
+
+        $userIds = $users->pluck('ID')->toArray();
+
+        // Find users who have a character at or above the required level
+        $qualifiedMap = DB::connection('mysql_game')
+            ->table('roles')
+            ->whereIn('account_id', $userIds)
+            ->selectRaw('account_id, MAX(role_level) as max_level')
+            ->groupBy('account_id')
+            ->havingRaw('MAX(role_level) >= ?', [$reqLevel])
+            ->pluck('max_level', 'account_id');
+
+        $distributed = 0;
+        $skipped     = 0; // Registered but belum punya karakter level cukup
+
+        foreach ($users as $user) {
+            if (! isset($qualifiedMap[$user->ID])) {
+                // Player belum buat karakter atau belum reach level — skip, bisa di-distribute lagi nanti
+                $skipped++;
+                continue;
+            }
+
+            $charLevel = (int) $qualifiedMap[$user->ID];
+
+            // Compute base SN once per user — prevents race condition for multiple reward items
+            $baseSn = (int)(DB::connection('mysql_game')
+                ->table('usecashnow')
+                ->where('userid', $user->ID)
+                ->where('zoneid', 1)
+                ->min('sn') ?? 0);
+
+            // Distribute each reward item as a separate Cubi queue entry
+            foreach ($rewards as $i => $reward) {
+                $cashValue = (int) $reward['amount'] * 100;
+                $sn        = $baseSn - ($i + 1); // unique SN per reward item
+
+                DB::connection('mysql_game')->table('usecashnow')->insert([
+                    'userid'   => $user->ID,
+                    'zoneid'   => 1,
+                    'sn'       => $sn,
+                    'aid'      => 1,
+                    'point'    => 4,
+                    'cash'     => $cashValue,
+                    'status'   => 0,
+                    'creatime' => now(),
+                ]);
+
+                // Record in pw_event_deliveries so CubiMonitor identifies source as "Event Reward"
+                DB::table('pw_event_deliveries')->insert([
+                    'event_id'   => $event->id,
+                    'user_id'    => $user->ID,
+                    'rank'       => 0, // register reward = no rank
+                    'amount'     => (int) $reward['amount'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            EventRegisterDelivery::create([
+                'event_id'       => $event->id,
+                'user_id'        => $user->ID,
+                'char_level'     => $charLevel,
+                'distributed'    => true,
+                'distributed_at' => now(),
+            ]);
+
+            $distributed++;
+        }
+
+        $msg = "Berhasil distribute ke {$distributed} player (karakter ≥ Level {$reqLevel}).";
+        if ($skipped > 0) {
+            $msg .= " {$skipped} player belum punya karakter Level {$reqLevel} — distribute ulang setelah mereka mencapai level.";
+        }
+
+        return back()->with('success', $msg);
     }
 }

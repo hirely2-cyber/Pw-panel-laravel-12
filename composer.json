@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.2",
         "guzzlehttp/guzzle": "^7.10",
+        "intervention/image": "^3.0",
         "intervention/image-laravel": "^1.5",
         "laravel/fortify": "^1.36",
         "laravel/framework": "^12.0",

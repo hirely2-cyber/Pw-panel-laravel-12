@@ -226,7 +226,7 @@ class GameServerService
      */
     public static function onlinePlayers(): array
     {
-        return Cache::remember('pw.server.online_players', 30, function () {
+        return Cache::remember('pw.server.online_players', 60, function () {
             try {
                 $url = 'http://127.0.0.1:8080/pwAdmin/api_online_players.jsp?token=pw_panel_sync_2026';
                 $ctx = stream_context_create(['http' => ['timeout' => 5]]);

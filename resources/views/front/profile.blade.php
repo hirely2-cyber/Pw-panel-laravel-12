@@ -528,7 +528,6 @@
                         <span class="pw-referral-stat__label">{{ __('main.profile_referral_pending') }}</span>
                     </div>
                 </div>
-                </div>
             </div>
 
             @if($referralRewardType === 'cubi')
@@ -635,7 +634,17 @@
 
         {{-- Pre-Launch Event Milestone Progress --}}
         @if(isset($preLaunchEvent) && $preLaunchEvent)
+        @php
+            $msAllTiers   = collect($preLaunchEvent->referral_tiers ?? []);
+            $msNextTier   = $msAllTiers->first(fn($t) => $preLaunchQualified < $t['count']);
+            $msPrevCount  = ($msAllTiers->last(fn($t) => $preLaunchQualified >= $t['count']) ?? null)['count'] ?? 0;
+            $msProgressTo = $msNextTier ? $msNextTier['count'] : ($msAllTiers->last()['count'] ?? 1);
+            $msRange      = $msProgressTo - $msPrevCount;
+            $msProgressPct = $msRange > 0 ? min(100, round((($preLaunchQualified - $msPrevCount) / $msRange) * 100)) : 100;
+            $msAllDone    = !$msNextTier;
+        @endphp
         <div class="pw-profile-card" style="margin-top:1.25rem;">
+            {{-- Header --}}
             <div class="pw-profile-card__header">
                 <svg viewBox="0 0 16 16" fill="none" width="14" aria-hidden="true"><path d="M8 1l2.09 4.26L15 6.27l-3.5 3.41.82 4.82L8 12.27l-4.32 2.23.82-4.82L1 6.27l4.91-.71L8 1z" stroke="#c8972a" stroke-width="1.2" stroke-linejoin="round"/></svg>
                 Pre-Launch Referral Milestones
@@ -646,54 +655,117 @@
                 @endif
             </div>
 
-            <div style="background:rgba(200,151,42,.06);border:1px solid rgba(200,151,42,.12);border-radius:8px;padding:.8rem 1rem;margin-bottom:1rem;">
-                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
-                    <div>
-                        <div style="font-size:.85rem;color:var(--pw-text-light);font-weight:600;">{{ $preLaunchEvent->title }}</div>
-                        <div style="font-size:.75rem;color:var(--pw-text-muted);">
-                            Syarat: Setiap ID harus punya karakter Level {{ $preLaunchEvent->referral_req_level }}
-                        </div>
+            {{-- Stats Row --}}
+            <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:1rem;background:rgba(200,151,42,.06);border:1px solid rgba(200,151,42,.14);border-radius:8px;padding:.9rem 1.1rem;margin-bottom:1.1rem;">
+                <div>
+                    <div style="font-size:.88rem;font-weight:700;color:var(--pw-text-light);margin-bottom:.15rem;">{{ $preLaunchEvent->title }}</div>
+                    <div style="font-size:.75rem;color:var(--pw-text-muted);">
+                        <svg viewBox="0 0 16 16" fill="none" width="11" style="vertical-align:-1px;margin-right:.2rem;" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3.5M8 10.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                        Syarat: karakter Level <strong style="color:var(--pw-gold);">{{ $preLaunchEvent->referral_req_level }}</strong> per ID
                     </div>
-                    <div style="text-align:center;">
-                        <div style="font-size:1.3rem;font-weight:800;color:#c8972a;">{{ $preLaunchQualified }}</div>
-                        <div style="font-size:.7rem;color:var(--pw-text-muted);">Referral Qualified</div>
-                    </div>
+                </div>
+                <div style="text-align:center;flex-shrink:0;">
+                    <div style="font-size:2rem;font-weight:800;font-family:'Cinzel',serif;color:#c8972a;line-height:1;">{{ $preLaunchQualified }}</div>
+                    <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--pw-text-muted);margin-top:.15rem;">Referral Qualified</div>
                 </div>
             </div>
 
-            {{-- Milestone Progress --}}
-            <div style="max-width:600px;margin:0 auto;">
-                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem;text-align:center;">
-                    @foreach($preLaunchEvent->referral_tiers ?? [] as $tier)
+            {{-- Progress Bar to Next Milestone --}}
+            @if(!$msAllDone)
+            <div style="margin-bottom:1.1rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;">
+                    <span style="font-size:.73rem;color:var(--pw-text-muted);">
+                        Progress ke milestone berikutnya
+                        <strong style="color:var(--pw-gold);">{{ $msNextTier['count'] }}</strong>
+                    </span>
+                    <span style="font-size:.73rem;font-weight:700;color:var(--pw-gold);">{{ $msProgressPct }}%</span>
+                </div>
+                <div style="height:7px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.06);">
+                    <div style="height:100%;width:{{ $msProgressPct }}%;background:linear-gradient(90deg,#c8972a,#e8b84b);border-radius:999px;transition:width .5s ease;box-shadow:0 0 8px rgba(200,151,42,.4);"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-top:.25rem;">
+                    <span style="font-size:.68rem;color:var(--pw-text-muted);">{{ $preLaunchQualified }} / {{ $msNextTier['count'] }} referral</span>
+                    <span style="font-size:.68rem;color:var(--pw-text-muted);">Hadiah: <strong style="color:var(--pw-gold);">{{ number_format($msNextTier['reward']) }} Cubi</strong></span>
+                </div>
+            </div>
+            @else
+            <div style="margin-bottom:1.1rem;padding:.6rem 1rem;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:8px;display:flex;align-items:center;gap:.6rem;">
+                <svg viewBox="0 0 16 16" fill="none" width="16" style="flex-shrink:0;color:#4ade80;"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span style="font-size:.82rem;color:#4ade80;font-weight:600;">Semua milestone telah tercapai!</span>
+            </div>
+            @endif
+
+            {{-- Milestone Timeline Zigzag --}}
+            <div>
+                {{-- ROW 1: Top cards (index genap: 0,2,4,...) --}}
+                <div style="display:flex;gap:.3rem;align-items:flex-end;">
+                    @foreach($msAllTiers as $i => $tier)
                     @php
-                        $reached = $preLaunchQualified >= $tier['count'];
-                        $distributed = $preLaunchMilestones->contains('milestone', $tier['count']);
+                        $msReached = $preLaunchQualified >= $tier['count'];
+                        $msDist    = $preLaunchMilestones->contains('milestone', $tier['count']);
+                        $msIsNext  = $msNextTier && $msNextTier['count'] === $tier['count'];
+                        $numColor  = $msDist ? '#4ade80' : ($msIsNext || $msReached ? '#c8972a' : 'var(--pw-text-muted)');
+                        $txtColor  = $msDist ? '#4ade80' : ($msIsNext || $msReached ? 'var(--pw-text-light)' : 'var(--pw-text-muted)');
+                        $cardBg    = $msDist ? 'rgba(74,222,128,.08)' : ($msIsNext ? 'rgba(200,151,42,.1)' : ($msReached ? 'rgba(200,151,42,.05)' : 'rgba(0,0,0,.12)'));
+                        $cardBdr   = $msDist ? 'rgba(74,222,128,.35)' : ($msIsNext ? 'rgba(200,151,42,.6)' : ($msReached ? 'rgba(200,151,42,.2)' : 'rgba(255,255,255,.08)'));
                     @endphp
-                    <div style="background:rgba(0,0,0,.35);border:1px solid {{ $distributed ? 'rgba(74,222,128,.25)' : ($reached ? 'rgba(251,191,36,.25)' : 'var(--pw-border)') }};border-radius:6px;padding:.6rem .5rem;min-width:90px;">
-                        <div style="display:block;font-size:1.3rem;font-weight:700;color:{{ $distributed ? '#7deba0' : ($reached ? '#d4a860' : 'var(--pw-gold-light)') }};">
-                            {{ $tier['count'] }}
-                        </div>
-                        <div style="display:block;font-size:.7rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.04em;margin-top:.15rem;">referral</div>
-                        <div style="font-size:.8rem;font-weight:600;color:var(--pw-text-light);margin-top:.25rem;">
-                            {{ number_format($tier['reward']) }} Cubi
-                        </div>
-                        <div style="margin-top:.35rem;">
-                            @if($distributed)
-                            <span class="pw-badge pw-badge--success" style="font-size:.68rem;padding:.15rem .5rem;">Diterima</span>
-                            @elseif($reached)
-                            <span class="pw-badge pw-badge--pending" style="font-size:.68rem;padding:.15rem .5rem;">Tercapai</span>
-                            @else
-                            <span style="font-size:.68rem;color:var(--pw-text-muted);">{{ $preLaunchQualified }}/{{ $tier['count'] }}</span>
-                            @endif
+                    <div style="flex:1;min-width:0;{{ $i % 2 !== 0 ? 'visibility:hidden;' : '' }}">
+                        <div style="border-radius:7px;padding:.35rem .25rem;text-align:center;overflow:hidden;border:1px solid {{ $cardBdr }};background:{{ $cardBg }};{{ $msIsNext ? 'box-shadow:0 0 8px rgba(200,151,42,.2);' : '' }}">
+                            <div style="font-size:.72rem;font-weight:800;font-family:'Cinzel',serif;color:{{ $numColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $tier['count'] }} <span style="font-family:inherit;font-size:.6rem;font-weight:500;color:var(--pw-text-muted);">ref</span></div>
+                            <div style="font-size:.68rem;font-weight:700;color:{{ $txtColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ number_format($tier['reward']) }} <span style="font-size:.58rem;font-weight:400;color:var(--pw-text-muted);">Cubi</span></div>
+                            <div style="font-size:.58rem;font-weight:600;color:{{ $msDist ? '#4ade80' : ($msIsNext ? '#c8972a' : ($msReached ? '#eab308' : 'var(--pw-text-muted)')) }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $msDist ? '✓ Diterima' : ($msIsNext ? $preLaunchQualified.'/'.$tier['count'] : ($msReached ? '⏳ Menunggu' : $preLaunchQualified.'/'.$tier['count'])) }}</div>
                         </div>
                     </div>
                     @endforeach
                 </div>
 
-            <div style="margin-top:.8rem;text-align:center;">
-                <a href="{{ route('referral.ranking') }}" style="font-size:.82rem;color:#c8972a;text-decoration:none;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                    Lihat Referral Ranking →
+                {{-- ROW 2: Dots + center line --}}
+                <div style="position:relative;display:flex;align-items:center;gap:.3rem;padding:.3rem 0;margin:.1rem 0;">
+                    {{-- Garis horizontal --}}
+                    <div style="position:absolute;top:50%;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent 0%,rgba(200,151,42,.55) 3%,rgba(200,151,42,.55) 97%,transparent 100%);transform:translateY(-50%);border-radius:99px;box-shadow:0 0 6px rgba(200,151,42,.25);pointer-events:none;z-index:0;"></div>
+                    @foreach($msAllTiers as $i => $tier)
+                    @php
+                        $msReached = $preLaunchQualified >= $tier['count'];
+                        $msDist    = $preLaunchMilestones->contains('milestone', $tier['count']);
+                        $msIsNext  = $msNextTier && $msNextTier['count'] === $tier['count'];
+                        $dotColor  = $msDist ? '#4ade80' : ($msIsNext ? '#c8972a' : ($msReached ? '#eab308' : 'rgba(200,151,42,.2)'));
+                        $dotBdr    = $msDist ? 'rgba(74,222,128,.5)' : ($msIsNext || $msReached ? 'rgba(200,151,42,.5)' : 'rgba(255,255,255,.1)');
+                    @endphp
+                    <div style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;z-index:1;">
+                        <div style="width:14px;height:14px;border-radius:50%;flex-shrink:0;background:{{ $dotColor }};border:2px solid {{ $dotBdr }};{{ $msIsNext ? 'box-shadow:0 0 10px rgba(200,151,42,.8),0 0 0 3px rgba(200,151,42,.2);' : ($msDist ? 'box-shadow:0 0 8px rgba(74,222,128,.6);' : '') }}"></div>
+                    </div>
+                    @endforeach
+                </div>
+
+                {{-- ROW 3: Bottom cards (index ganjil: 1,3,5,...) --}}
+                <div style="display:flex;gap:.3rem;align-items:flex-start;">
+                    @foreach($msAllTiers as $i => $tier)
+                    @php
+                        $msReached = $preLaunchQualified >= $tier['count'];
+                        $msDist    = $preLaunchMilestones->contains('milestone', $tier['count']);
+                        $msIsNext  = $msNextTier && $msNextTier['count'] === $tier['count'];
+                        $numColor  = $msDist ? '#4ade80' : ($msIsNext || $msReached ? '#c8972a' : 'var(--pw-text-muted)');
+                        $txtColor  = $msDist ? '#4ade80' : ($msIsNext || $msReached ? 'var(--pw-text-light)' : 'var(--pw-text-muted)');
+                        $cardBg    = $msDist ? 'rgba(74,222,128,.08)' : ($msIsNext ? 'rgba(200,151,42,.1)' : ($msReached ? 'rgba(200,151,42,.05)' : 'rgba(0,0,0,.12)'));
+                        $cardBdr   = $msDist ? 'rgba(74,222,128,.35)' : ($msIsNext ? 'rgba(200,151,42,.6)' : ($msReached ? 'rgba(200,151,42,.2)' : 'rgba(255,255,255,.08)'));
+                    @endphp
+                    <div style="flex:1;min-width:0;{{ $i % 2 !== 1 ? 'visibility:hidden;' : '' }}">
+                        <div style="border-radius:7px;padding:.35rem .25rem;text-align:center;overflow:hidden;border:1px solid {{ $cardBdr }};background:{{ $cardBg }};{{ $msIsNext ? 'box-shadow:0 0 8px rgba(200,151,42,.2);' : '' }}">
+                            <div style="font-size:.72rem;font-weight:800;font-family:'Cinzel',serif;color:{{ $numColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $tier['count'] }} <span style="font-family:inherit;font-size:.6rem;font-weight:500;color:var(--pw-text-muted);">ref</span></div>
+                            <div style="font-size:.68rem;font-weight:700;color:{{ $txtColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ number_format($tier['reward']) }} <span style="font-size:.58rem;font-weight:400;color:var(--pw-text-muted);">Cubi</span></div>
+                            <div style="font-size:.58rem;font-weight:600;color:{{ $msDist ? '#4ade80' : ($msIsNext ? '#c8972a' : ($msReached ? '#eab308' : 'var(--pw-text-muted)')) }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $msDist ? '✓ Diterima' : ($msIsNext ? $preLaunchQualified.'/'.$tier['count'] : ($msReached ? '⏳ Menunggu' : $preLaunchQualified.'/'.$tier['count'])) }}</div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Link to Ranking --}}
+            <div style="margin-top:1rem;text-align:center;padding-top:.85rem;border-top:1px solid var(--pw-border,rgba(255,255,255,.07));">
+                <a href="{{ route('referral.ranking') }}" style="display:inline-flex;align-items:center;gap:.35rem;font-size:.82rem;font-weight:600;color:#c8972a;text-decoration:none;opacity:.9;transition:opacity .15s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=.9">
+                    <svg viewBox="0 0 16 16" fill="none" width="13" aria-hidden="true"><path d="M2 12.5V11a4 4 0 014-4h4a4 4 0 014 4v1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/></svg>
+                    Lihat Referral Ranking
+                    <svg viewBox="0 0 16 16" fill="none" width="12" aria-hidden="true"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </a>
             </div>
         </div>

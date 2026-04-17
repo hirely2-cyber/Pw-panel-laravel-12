@@ -1494,11 +1494,15 @@ button { font-family: inherit; }
 
 .pw-srv__pr-faction {
   font-size: .68rem;
-  color: var(--pw-text-muted);
+  color: var(--pw-gold, #c9a84c);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  opacity: .7;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+[data-theme="light"] .pw-srv__pr-faction {
+  color: #8b6914;
 }
 
 /* Header alignment helpers */
@@ -7702,8 +7706,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 /* ── Livechat (WhatsApp) ── */
 .pw-livechat {
   position: fixed;
-  bottom: 28px;
-  left: 20px;
+  bottom: 84px;
+  right: 20px;
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -7872,7 +7876,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
   /* Shift floating widgets above mobile nav */
   .pw-livechat {
-    bottom: 84px;
+    bottom: 140px;
   }
   .pw-back-to-top {
     bottom: 84px;
@@ -7904,13 +7908,12 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 /* ---- Hero ---- */
 .pw-landing-hero {
   position: relative;
-  min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   overflow: hidden;
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 3rem 1rem 3rem;
 }
 .pw-landing-hero__bg {
   position: absolute; inset: 0; z-index: 0;
@@ -7930,7 +7933,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   max-width: 700px; margin: 0 auto;
 }
 .pw-landing-hero__logo {
-  height: 100px; margin-bottom: 1.5rem;
+  height: 150px; margin-bottom: 1.5rem;
   filter: drop-shadow(0 4px 20px rgba(200,151,42,.4));
   animation: landingFloat 3s ease-in-out infinite;
 }
@@ -8300,7 +8303,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     gap: 1rem;
   }
   .pw-landing-hero__logo {
-    height: 70px;
+    height: 90px;
   }
   .pw-landing-countdown__box {
     min-width: 58px;
@@ -8319,3 +8322,243 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   Promo Landing — Extra classes
+============================================================ */
+@keyframes livePulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.4; transform:scale(1.5); }
+}
+@keyframes scrollBounce {
+  0%,100% { transform:translateY(0); }
+  50%      { transform:translateY(7px); }
+}
+
+/* Stats bar */
+.pw-promo-stat {
+  display:flex;align-items:center;gap:.45rem;
+  font-size:.82rem;color:rgba(255,255,255,.65);
+}
+.pw-promo-stat__sep {
+  width:1px;height:16px;background:rgba(200,151,42,.2);
+}
+@media(max-width:480px){ .pw-promo-stat__sep{ display:none; } }
+
+/* How it works steps */
+.pw-promo-steps {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:2rem;
+}
+.pw-promo-step {
+  text-align:center;
+  padding:1.6rem 1rem;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(200,151,42,.12);
+  border-radius:14px;
+  position:relative;
+  transition:border-color .2s,background .2s;
+}
+.pw-promo-step:hover {
+  border-color:rgba(200,151,42,.3);
+  background:rgba(200,151,42,.04);
+}
+.pw-promo-step__num {
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(135deg,#c8972a,#7f4f2c);
+  color:#fff;font-size:.7rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+}
+.pw-promo-step__icon {
+  margin:0 auto .8rem;
+  width:60px;height:60px;border-radius:50%;
+  background:rgba(200,151,42,.08);
+  display:flex;align-items:center;justify-content:center;
+}
+.pw-promo-step__title {
+  font-family:'Cinzel',serif;font-size:.95rem;font-weight:700;
+  color:var(--pw-text-light);margin:0 0 .4rem;
+}
+.pw-promo-step__desc {
+  font-size:.82rem;color:var(--pw-text-muted);margin:0;line-height:1.5;
+}
+@media(max-width:640px){
+  .pw-promo-steps { grid-template-columns:1fr; }
+}
+
+/* Milestone cards */
+.pw-promo-milestone {
+  position:relative;text-align:center;
+  padding:1.2rem .8rem 1rem;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(200,151,42,.15);
+  border-radius:12px;
+  transition:border-color .2s,transform .15s;
+}
+.pw-promo-milestone:hover {
+  border-color:rgba(200,151,42,.35);
+  transform:translateY(-3px);
+}
+.pw-promo-milestone--highlight {
+  border-color:rgba(200,151,42,.5);
+  background:linear-gradient(160deg,rgba(200,151,42,.08),rgba(200,151,42,.02));
+  box-shadow:0 0 20px rgba(200,151,42,.1);
+}
+.pw-promo-milestone__best {
+  position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+  white-space:nowrap;padding:.18rem .6rem;border-radius:99px;
+  background:linear-gradient(90deg,#c8972a,#7f4f2c);
+  color:#fff;font-size:.65rem;font-weight:800;letter-spacing:.05em;
+}
+.pw-promo-milestone__count {
+  font-family:'Cinzel',serif;font-size:1.8rem;font-weight:800;
+  color:var(--pw-gold);line-height:1;margin-bottom:.15rem;
+}
+.pw-promo-milestone__label {
+  font-size:.72rem;color:var(--pw-text-muted);text-transform:uppercase;letter-spacing:.06em;
+  margin-bottom:.5rem;
+}
+.pw-promo-milestone__reward {
+  font-size:.82rem;font-weight:700;color:var(--pw-text-light);
+}
+
+/* Community CTA */
+.pw-promo-community {
+  display:grid;grid-template-columns:1fr auto;gap:2rem;align-items:center;
+}
+.pw-promo-community__btns {
+  display:flex;gap:.7rem;flex-wrap:wrap;justify-content:flex-end;
+}
+.pw-promo-community__btn {
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.7rem 1.3rem;border-radius:8px;
+  font-size:.85rem;font-weight:700;text-decoration:none;
+  transition:background .2s;
+}
+.pw-promo-community__btn--discord {
+  background:rgba(88,101,242,.15);border:1px solid rgba(88,101,242,.3);color:#818cf8;
+}
+.pw-promo-community__btn--discord:hover { background:rgba(88,101,242,.25); }
+.pw-promo-community__btn--facebook {
+  background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);color:#60a5fa;
+}
+.pw-promo-community__btn--facebook:hover { background:rgba(59,130,246,.22); }
+@media(max-width:640px){
+  .pw-promo-community { grid-template-columns:1fr; }
+  .pw-promo-community__btns { justify-content:flex-start; }
+}
+
+/* Milestone 4-column responsive */
+.pw-promo-milestone-grid {
+  grid-template-columns: repeat(5, 1fr);
+}
+@media (max-width: 900px) {
+  .pw-promo-milestone-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
+  .pw-promo-milestone-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Register Reward Banner ── */
+.pw-reg-reward-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: linear-gradient(135deg, rgba(34,197,94,.1) 0%, rgba(16,185,129,.06) 100%);
+  border: 1.5px solid rgba(34,197,94,.35);
+  border-radius: 14px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+.pw-reg-reward-banner__glow {
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34,197,94,.15), transparent 70%);
+  pointer-events: none;
+}
+.pw-reg-reward-banner__left {
+  padding: 1.2rem 1.6rem;
+  flex-shrink: 0;
+  min-width: 200px;
+}
+.pw-reg-reward-banner__heading {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .13em;
+  color: #16a34a;
+  margin-bottom: .6rem;
+}
+.pw-reg-reward-banner__amount {
+  display: flex;
+  align-items: baseline;
+  gap: .4rem;
+  line-height: 1;
+}
+.pw-reg-reward-banner__number {
+  font-size: 2.4rem;
+  font-weight: 900;
+  font-family: 'Cinzel', serif;
+  background: linear-gradient(135deg,#fbbf24 0%,#f59e0b 40%,#fcd34d 60%,#c8972a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 8px rgba(251,191,36,.3));
+}
+.pw-reg-reward-banner__item {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #c8972a;
+}
+.pw-reg-reward-banner__divider {
+  width: 1.5px;
+  align-self: stretch;
+  background: linear-gradient(to bottom, transparent, rgba(34,197,94,.4), transparent);
+  flex-shrink: 0;
+  margin: .8rem 0;
+}
+.pw-reg-reward-banner__right {
+  padding: 1.2rem 1.4rem;
+  flex: 1;
+}
+.pw-reg-reward-banner__desc {
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--pw-text);
+  line-height: 1.5;
+  margin-bottom: .5rem;
+}
+.pw-reg-reward-banner__note {
+  display: flex;
+  align-items: flex-start;
+  gap: .3rem;
+  font-size: .78rem;
+  color: var(--pw-text-muted);
+  line-height: 1.5;
+}
+@media (max-width: 560px) {
+  .pw-reg-reward-banner { flex-direction: column; align-items: stretch; }
+  .pw-reg-reward-banner__divider { width: auto; height: 1.5px; margin: 0 1rem;
+    background: linear-gradient(to right, transparent, rgba(34,197,94,.4), transparent);
+  }
+  .pw-reg-reward-banner__left { padding-bottom: .8rem; }
+}
+
+/* Light mode overrides */
+[data-theme="light"] .pw-reg-reward-banner {
+  background: linear-gradient(135deg, rgba(22,163,74,.08) 0%, rgba(16,185,129,.05) 100%);
+  border-color: rgba(22,163,74,.45);
+}
+[data-theme="light"] .pw-reg-reward-banner__heading { color: #15803d; }
+[data-theme="light"] .pw-reg-reward-banner__number  { filter: none; }
+[data-theme="light"] .pw-reg-reward-banner__item    { color: #92600a; }
+[data-theme="light"] .pw-reg-reward-banner__desc    { color: #1a1a1a; }
+[data-theme="light"] .pw-reg-reward-banner__note    { color: #4b5563; }

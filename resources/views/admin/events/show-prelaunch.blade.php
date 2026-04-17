@@ -41,9 +41,37 @@
     </div>
     <div class="pw-adm-card" style="text-align:center;padding:1.2rem;">
         <div style="font-size:1.8rem;font-weight:800;color:#c8972a;">Lv.{{ $event->referral_req_level }}</div>
-        <div style="font-size:.82rem;color:var(--pw-text-muted);">Syarat Level Karakter</div>
+        <div style="font-size:.82rem;color:var(--pw-text-muted);">Syarat Referral Level</div>
+    </div>
+    <div class="pw-adm-card" style="text-align:center;padding:1.2rem;">
+        <div style="font-size:1.8rem;font-weight:800;color:#4ade80;">Lv.{{ $event->register_req_level ?? 50 }}</div>
+        <div style="font-size:.82rem;color:var(--pw-text-muted);">Syarat Hadiah Register</div>
+    </div>
+    <div class="pw-adm-card" style="text-align:center;padding:1.2rem;">
+        <div style="font-size:1.8rem;font-weight:800;color:#4ade80;">{{ number_format($registerDeliveredCount) }}</div>
+        <div style="font-size:.82rem;color:var(--pw-text-muted);">Hadiah Register Terkirim</div>
     </div>
 </div>
+
+{{-- Register Rewards Info --}}
+@if($event->register_rewards)
+<div class="pw-adm-card" style="margin-bottom:1.5rem;border-color:rgba(74,222,128,.2);">
+    <div class="pw-adm-card__title" style="color:#4ade80;">Hadiah Register (Daftar Akun)</div>
+    <div style="font-size:.82rem;color:var(--pw-text-muted);margin-bottom:.8rem;">
+        Diberikan ke player yang terdaftar selama event <strong style="color:var(--pw-text);">DAN</strong> sudah punya karakter minimal
+        <strong style="color:#4ade80;">Level {{ $event->register_req_level ?? 50 }}</strong>.
+        Sudah terkirim: <strong style="color:#4ade80;">{{ number_format($registerDeliveredCount) }}</strong> player.
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:.7rem;">
+        @foreach($event->register_rewards as $reward)
+        <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.15);border-radius:8px;">
+            <span style="font-weight:800;color:#4ade80;">{{ number_format($reward['amount']) }}</span>
+            <span style="font-size:.82rem;color:var(--pw-text-muted);">{{ $reward['label'] }}</span>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
 
 {{-- Referral Tiers --}}
 <div class="pw-adm-card" style="margin-bottom:1.5rem;">
@@ -161,6 +189,14 @@
         @csrf
         <button type="submit" class="pw-adm-btn" style="background:#38bdf8;color:#0a0a0f;">Distribute Referral Rewards</button>
     </form>
+    @if($event->register_rewards)
+    <form method="POST" action="{{ route('admin.events.distribute-register', $event) }}" style="display:inline;"
+          data-confirm="Distribute Hadiah Register|Kirim hadiah register ke semua player yang sudah mencapai Level {{ $event->register_req_level ?? 50 }}? Hanya player baru selama event yang belum menerima."
+          data-confirm-variant="success" data-confirm-ok="Ya, Distribute">
+        @csrf
+        <button type="submit" class="pw-adm-btn" style="background:#4ade80;color:#052e16;">Distribute Hadiah Register</button>
+    </form>
+    @endif
     @endif
 </div>
 @endsection

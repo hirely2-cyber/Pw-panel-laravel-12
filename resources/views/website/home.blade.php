@@ -178,7 +178,7 @@
                 <span class="pw-srv__ph-gender"></span>
                 <span class="pw-srv__ph-lvl">{{ __('main.srv_level') }}</span>
                 <span class="pw-srv__ph-class">{{ __('main.srv_class') }}</span>
-                <span class="pw-srv__ph-faction">{{ __('main.srv_faction') }}</span>
+                <span class="pw-srv__ph-faction">{{ __('main.srv_cultivation') }}</span>
             </div>
             <div class="pw-srv__players-list">
                 <template x-if="players.length === 0">
@@ -192,7 +192,7 @@
                         <span class="pw-srv__pr-gender" :class="p.gender === 0 ? 'pw-srv__pr-gender--m' : 'pw-srv__pr-gender--f'" x-text="p.gender === 0 ? '♂' : '♀'"></span>
                         <span class="pw-srv__pr-lvl" x-text="p.level"></span>
                         <span class="pw-srv__pr-class" x-text="classLabel(p.class)"></span>
-                        <span class="pw-srv__pr-faction" x-text="p.faction || '-'"></span>
+                        <span class="pw-srv__pr-faction" x-text="cultivationLabel(p.level)"></span>
                     </div>
                 </template>
             </div>
@@ -635,6 +635,19 @@ function pwServerStatus() {
         },
         classLabel(id) { return PW_CLASSES[id] || 'Unknown'; },
         classIcon(id) { return '/images/class/' + (PW_CLASS_ICONS[id] || 'blademaster') + '.png'; },
+        cultivationLabel(lv) {
+            if (lv >= 100) return 'Sage';
+            if (lv >= 90)  return 'Celestial';
+            if (lv >= 80)  return 'Ancestor';
+            if (lv >= 70)  return 'Master';
+            if (lv >= 60)  return 'Venerable';
+            if (lv >= 50)  return 'Expert';
+            if (lv >= 40)  return 'Senior';
+            if (lv >= 30)  return 'Adept';
+            if (lv >= 20)  return 'Disciple';
+            if (lv >= 10)  return 'Apprentice';
+            return 'Initiate';
+        },
         fetch() {
             fetch('{{ route("api.online_count") }}')
                 .then(r => r.json())

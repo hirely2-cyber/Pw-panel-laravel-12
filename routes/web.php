@@ -143,8 +143,58 @@ Route::get('/download', [HomeController::class, 'download'])->name('download');
 
 // Promo / Landing pages (FB Ads)
 Route::get('/promo/launch', function () {
-    return view('website.promo-launch');
+    $registeredCount = \App\Models\User::count();
+    $todayCount      = \App\Models\User::whereDate('creatime', today())->count();
+    $event           = \App\Models\LaunchEvent::where('status', 'active')->where('type', 'pre_launch')->latest('start_at')->first();
+    return view('website.promo-launch', compact('registeredCount', 'todayCount', 'event'));
 })->name('promo.launch');
+
+// Social Proof Widget Feed (public, cached, throttled)
+Route::get('/api/social-proof', function () {
+    return cache()->remember('pw.social_proof_feed', 60, function () {
+        // Helper: mask name — show first 2 chars + ***
+        $mask = function ($raw) {
+            $raw = trim($raw) ?: 'Player';
+            $len = mb_strlen($raw);
+            return mb_substr($raw, 0, min(2, $len)) . '***';
+        };
+
+        // Recent registrations
+        $registrations = \App\Models\User::select('truename', 'name', 'creatime')
+            ->orderByDesc('creatime')
+            ->limit(12)
+            ->get()
+            ->map(fn ($u) => [
+                'type' => 'register',
+                'name' => $mask($u->truename ?: $u->name),
+                'ts'   => $u->creatime?->timestamp ?? 0,
+            ]);
+
+        // Recent paid cubi purchases
+        $purchases = \App\Models\Invoice::where('status', 'paid')
+            ->whereNotNull('paid_at')
+            ->whereNotNull('cubi_amount')
+            ->where('cubi_amount', '>', 0)
+            ->orderByDesc('paid_at')
+            ->limit(8)
+            ->get()
+            ->map(function ($inv) use ($mask) {
+                $u   = \App\Models\User::find($inv->user_id);
+                $raw = $u ? ($u->truename ?: $u->name) : 'Player';
+                return [
+                    'type'   => 'purchase',
+                    'name'   => $mask($raw),
+                    'amount' => (int) $inv->cubi_amount,
+                    'ts'     => $inv->paid_at?->timestamp ?? 0,
+                ];
+            });
+
+        return $registrations->concat($purchases)
+            ->sortByDesc('ts')
+            ->values()
+            ->take(20);
+    });
+})->middleware('throttle:30,1');
 
 // Pre-Launch Referral Ranking (public)
 Route::get('/referral-ranking', [HomeController::class, 'referralRanking'])->name('referral.ranking');
@@ -400,6 +450,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'webadmin'])->group(
         Route::post('events/{event}/toggle', [Admin\EventController::class, 'toggle'])->name('events.toggle');
         Route::post('events/{event}/distribute', [Admin\EventController::class, 'distribute'])->name('events.distribute');
         Route::post('events/{event}/distribute-referrals', [Admin\EventController::class, 'distributeReferrals'])->name('events.distribute-referrals');
+        Route::post('events/{event}/distribute-register', [Admin\EventController::class, 'distributeRegisterRewards'])->name('events.distribute-register');
 
     });
 

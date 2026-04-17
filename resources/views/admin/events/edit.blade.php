@@ -72,6 +72,36 @@
             </button>
         </div>
 
+        {{-- REGISTER REWARDS (Pre-Launch) --}}
+        <div x-data="editRegisterRewards()" style="background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:8px;padding:1rem;margin-bottom:1rem;">
+            <div style="font-size:.85rem;font-weight:700;color:#4ade80;margin-bottom:.3rem;">Hadiah Register (Daftar Akun)</div>
+            <div style="font-size:.72rem;color:var(--pw-text-muted);margin-bottom:.8rem;">Item yang diterima pemain yang sudah daftar <strong>dan mencapai level minimal</strong>. Kosongkan jika tidak ada hadiah register.</div>
+
+            <div style="margin-bottom:.8rem;">
+                <label class="pw-adm-label">Syarat Minimal Level Karakter</label>
+                <input type="number" name="register_req_level" class="pw-adm-input" value="{{ old('register_req_level', $event->register_req_level ?? 50) }}" min="1" max="150" style="max-width:120px;">
+                <div style="font-size:.72rem;color:var(--pw-text-muted);margin-top:.3rem;">Player harus punya karakter yang sudah mencapai level ini agar dapat hadiah register.</div>
+            </div>
+            <template x-for="(item, index) in items" :key="index">
+                <div style="display:grid;grid-template-columns:1fr 80px auto;gap:.5rem;margin-bottom:.5rem;align-items:end;">
+                    <div>
+                        <label class="pw-adm-label" x-show="index === 0">Nama Hadiah</label>
+                        <input type="text" :name="'register_rewards['+index+'][label]'" class="pw-adm-input" x-model="item.label" required placeholder="Contoh: Cubi Gold, Mystery Box, Fashion Set">
+                    </div>
+                    <div>
+                        <label class="pw-adm-label" x-show="index === 0">Jumlah</label>
+                        <input type="number" :name="'register_rewards['+index+'][amount]'" class="pw-adm-input" x-model.number="item.amount" min="1" required placeholder="50">
+                    </div>
+                    <button type="button" @click="items.splice(index, 1)" class="pw-adm-btn pw-adm-btn--danger pw-adm-btn--sm" x-show="items.length > 1" style="margin-bottom:2px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </template>
+            <button type="button" @click="items.push({label:'', amount:1})" class="pw-adm-btn pw-adm-btn--ghost pw-adm-btn--sm" style="margin-top:.5rem;">
+                + Tambah Hadiah
+            </button>
+        </div>
+
         @else
         {{-- GRAND LAUNCH FIELDS --}}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
@@ -161,6 +191,11 @@
 function editTiers() {
     return {
         tiers: @json(old('referral_tiers', $event->referral_tiers ?? [['count' => 10, 'reward' => 50]])),
+    };
+}
+function editRegisterRewards() {
+    return {
+        items: @json(old('register_rewards', $event->register_rewards ?? [['label' => 'Cubi Gold', 'amount' => 50]])),
     };
 }
 </script>

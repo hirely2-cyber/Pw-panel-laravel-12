@@ -56,10 +56,6 @@
                 Berita
             </a>
             @if(auth()->user()->isAdministrator())
-            <a href="{{ route('admin.settings') }}" class="pw-adm-nav__item {{ request()->routeIs('admin.settings.content') ? 'is-active' : '' }}">
-                <svg viewBox="0 0 20 20" fill="none" width="16"><rect x="2" y="3" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 13l4-4 3 3 3-3 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Konten Website
-            </a>
             <a href="{{ route('admin.settings.panel') }}" class="pw-adm-nav__item {{ request()->routeIs('admin.settings.panel*') ? 'is-active' : '' }}">
                 <svg viewBox="0 0 20 20" fill="none" width="16"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M10 2v1.5M10 16.5V18M2 10h1.5M16.5 10H18M4.2 4.2l1 1M14.8 14.8l1 1M15.8 4.2l-1 1M5.2 14.8l-1 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                 Konfigurasi Panel
