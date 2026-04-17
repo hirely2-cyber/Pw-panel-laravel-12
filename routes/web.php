@@ -260,6 +260,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cubi-shop', [Front\CubiShopController::class, 'index'])->name('cubi-shop');
     Route::post('/cubi-shop/validate-refcode', [Front\CubiShopController::class, 'validateRefcode'])->name('cubi-shop.validate-refcode');
     Route::post('/cubi-shop/invoice', [Front\CubiShopController::class, 'createInvoice'])->name('cubi-shop.invoice');
+    Route::post('/cubi-shop/invoice/{invoiceNumber}/cancel', [Front\CubiShopController::class, 'cancelInvoice'])->name('cubi-shop.invoice.cancel');
 
     // Vote
     Route::middleware('feature:vote')->group(function () {

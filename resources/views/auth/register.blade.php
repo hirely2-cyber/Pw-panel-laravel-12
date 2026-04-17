@@ -184,6 +184,37 @@
                 </button>
             </form>
 
+            {{-- IP & Timezone Info --}}
+            <div style="margin-top:.9rem;padding:.65rem .85rem;background:rgba(166,107,66,.08);border:1px solid rgba(166,107,66,.2);border-radius:8px;display:flex;flex-direction:column;gap:.3rem;text-align:center;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:.15rem;">
+                    <span style="font-size:.72rem;color:rgba(196,157,109,.6);letter-spacing:.04em;text-transform:uppercase;font-weight:600;">
+                        {{ app()->getLocale() === 'id' ? 'IP Anda' : 'Your IP' }}
+                    </span>
+                    <span style="font-size:.82rem;font-weight:700;color:#d4a860;font-family:monospace;letter-spacing:.06em;">
+                        {{ request()->ip() }}
+                    </span>
+                </div>
+                <div style="width:100%;height:1px;background:rgba(166,107,66,.15);"></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:.15rem;">
+                    <span style="font-size:.72rem;color:rgba(196,157,109,.6);letter-spacing:.04em;text-transform:uppercase;font-weight:600;">
+                        Timezone
+                    </span>
+                    <span id="pw-reg-tz" style="font-size:.82rem;font-weight:600;color:rgba(212,168,96,.85);font-family:monospace;">
+                        {{ date_default_timezone_get() }}
+                    </span>
+                </div>
+            </div>
+            <script>
+            (function(){
+                var el = document.getElementById('pw-reg-tz');
+                if (!el) return;
+                try {
+                    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                    if (tz) el.textContent = tz;
+                } catch(e) {}
+            })();
+            </script>
+
             <div class="pw-auth__footer" style="margin-top:1rem;">
                 <p>{{ __('main.auth_has_account') }} <a href="{{ route('login') }}">{{ __('main.auth_login_link') }}</a></p>
             </div>

@@ -74,6 +74,19 @@ class CubiShopController extends Controller
         $channelType = $request->channel_type;
         $basePrice   = (int) $request->amount;
 
+        // Check for existing unpaid invoice (pending, not expired)
+        $existing = Invoice::where('user_id', $user->ID)
+            ->where('type', 'cubi')
+            ->where('status', Invoice::STATUS_PENDING)
+            ->where('expires_at', '>', now())
+            ->latest()
+            ->first();
+
+        if ($existing) {
+            return redirect()->route('donate.invoice.show', $existing->invoice_number)
+                ->with('warning', 'Kamu masih memiliki invoice yang belum dibayar. Selesaikan pembayaran terlebih dahulu.');
+        }
+
         // Calculate cubi from amount
         $baseCubi  = intdiv($basePrice, $cubiRate);
         $multiples = intdiv($baseCubi, $bonusMultiple);
@@ -132,7 +145,7 @@ class CubiShopController extends Controller
             'unique_suffix'          => $result['unique_suffix'] ?? 0,
             'unique_amount'          => $result['pay_amount'] ?? $finalPrice,
             'status'                 => Invoice::STATUS_PENDING,
-            'expires_at'             => now()->addMinutes(10),
+            'expires_at'             => now()->addHours(24),
             'qris_url'               => $result['qris_url'] ?? null,
             'channel_type'           => $result['channel_type'] ?? $channelType,
             'payment_instruction'    => $result['payment_instruction'] ?? null,
@@ -146,5 +159,19 @@ class CubiShopController extends Controller
         ]);
 
         return redirect()->route('donate.invoice.show', $invoice->invoice_number);
+    }
+
+    public function cancelInvoice(Request $request, string $invoiceNumber): RedirectResponse
+    {
+        $invoice = Invoice::where('invoice_number', $invoiceNumber)
+            ->where('user_id', $request->user()->ID)
+            ->where('type', 'cubi')
+            ->where('status', Invoice::STATUS_PENDING)
+            ->firstOrFail();
+
+        $invoice->update(['status' => Invoice::STATUS_EXPIRED]);
+
+        return redirect()->route('cubi-shop')
+            ->with('success', 'Invoice dibatalkan. Kamu bisa membuat invoice baru sekarang.');
     }
 }

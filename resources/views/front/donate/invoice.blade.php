@@ -45,7 +45,7 @@
                 Beranda
             </a>
             <span class="pw-breadcrumb__sep" aria-hidden="true">/</span>
-            <a href="{{ route('donate') }}" class="pw-breadcrumb__item">Top-up Gold Points</a>
+            <a href="{{ route('cubi-shop') }}" class="pw-breadcrumb__item">Top-up Gold Points</a>
             <span class="pw-breadcrumb__sep" aria-hidden="true">/</span>
             <span class="pw-breadcrumb__item pw-breadcrumb__item--active">Invoice</span>
         </nav>
@@ -55,6 +55,14 @@
 {{-- INVOICE CONTENT --}}
 <section class="pw-section">
     <div class="pw-section__inner">
+
+        @if(session('warning'))
+        <div style="background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);border-radius:10px;padding:.8rem 1.1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:.7rem;color:#fbbf24;font-size:.85rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>{{ session('warning') }}</span>
+        </div>
+        @endif
+
         <div class="pw-invoice-layout">
 
         {{-- LEFT: Invoice Card --}}
@@ -144,7 +152,7 @@
                 </svg>
                 <div style="font-size:.9rem;font-weight:600;color:#fb923c;">Waktu Pembayaran Habis</div>
                 <p style="font-size:.78rem;color:var(--pw-text-muted);line-height:1.6;max-width:240px;">Invoice ini sudah kadaluarsa. Buat invoice baru untuk melanjutkan top-up Gold Points.</p>
-                <a href="{{ route('donate') }}" class="pw-btn pw-btn--gold pw-btn--sm" style="margin-top:.2rem;">Buat Invoice Baru</a>
+                <a href="{{ route('cubi-shop') }}" class="pw-btn pw-btn--gold pw-btn--sm" style="margin-top:.2rem;">Buat Invoice Baru</a>
             </div>
             @elseif($invoice->status === 'failed')
             {{-- Failed/Rejected: show message --}}
@@ -155,7 +163,7 @@
                 </svg>
                 <div style="font-size:.9rem;font-weight:600;color:#fca5a5;">Pembayaran Gagal / Ditolak</div>
                 <p style="font-size:.78rem;color:var(--pw-text-muted);line-height:1.6;max-width:240px;">Invoice ini telah ditolak atau gagal diproses. Buat invoice baru untuk mencoba lagi.</p>
-                <a href="{{ route('donate') }}" class="pw-btn pw-btn--gold pw-btn--sm" style="margin-top:.2rem;">Buat Invoice Baru</a>
+                <a href="{{ route('cubi-shop') }}" class="pw-btn pw-btn--gold pw-btn--sm" style="margin-top:.2rem;">Buat Invoice Baru</a>
             </div>
             @elseif(($invoice->channel_type ?? '') === 'qris')
             {{-- QRIS: tampilkan QR --}}
@@ -301,7 +309,7 @@
                 Gold Points <strong style="color:var(--pw-gold);">+{{ number_format($invoice->gold_amount) }}</strong> sudah berhasil masuk ke akun kamu.
                 @endif
             </p>
-            <a href="{{ route('donate') }}" class="pw-btn pw-btn--gold pw-btn--sm" style="margin-top:1rem;display:inline-flex;">Top-up Lagi</a>
+            <a href="{{ route('cubi-shop') }}" class="pw-btn pw-btn--gold pw-btn--sm" style="margin-top:1rem;display:inline-flex;">Top-up Lagi</a>
         </div>
         @endif
 
@@ -309,7 +317,7 @@
         <div class="pw-invoice-guide" style="margin-top:1rem;">
             <div class="pw-invoice-guide__title">Info Penting</div>
             <ul style="margin:0;padding-left:1.2rem;font-size:.83rem;color:var(--pw-text-muted);line-height:1.9;list-style-type:disc;">
-                <li>Invoice berlaku selama <strong style="color:var(--pw-text);">10 menit</strong></li>
+                <li>Invoice berlaku selama <strong style="color:var(--pw-text);">24 jam</strong></li>
                 <li>Bayar <strong style="color:var(--pw-gold);">tepat sesuai nominal</strong> — beda 1 rupiah tidak terdeteksi</li>
                 <li>Gold Points masuk otomatis setelah pembayaran dikonfirmasi</li>
                 <li>Butuh bantuan? Hubungi admin server</li>
@@ -320,12 +328,26 @@
 
         </div>{{-- /.pw-invoice-layout --}}
         <div class="pw-donate-invoice-actions">
-            <a href="{{ route('donate') }}" class="pw-btn pw-btn--ghost pw-btn--sm">
+            @if($invoice->status === 'pending')
+            <form method="POST" action="{{ route('cubi-shop.invoice.cancel', $invoice->invoice_number) }}"
+                  onsubmit="return confirm('Batalkan invoice ini? Kamu bisa buat invoice baru setelah dibatalkan.')">
+                @csrf
+                <button type="submit" class="pw-btn pw-btn--ghost pw-btn--sm" style="color:#fca5a5;border-color:rgba(252,165,165,.3);">
+                    <svg viewBox="0 0 16 16" fill="none" width="13" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/>
+                        <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                    </svg>
+                    Batalkan Invoice
+                </button>
+            </form>
+            @else
+            <a href="{{ route('cubi-shop') }}" class="pw-btn pw-btn--ghost pw-btn--sm">
                 <svg viewBox="0 0 16 16" fill="none" width="13" aria-hidden="true">
                     <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 Buat Invoice Baru
             </a>
+            @endif
             <a href="{{ route('donate.history') }}" class="pw-btn pw-btn--ghost pw-btn--sm">
                 <svg viewBox="0 0 16 16" fill="none" width="13" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 1v4M11 1v4M2 7h12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
                 Riwayat Transaksi
@@ -363,9 +385,17 @@
             return;
         }
 
-        const mins = Math.floor(diff / 60000);
+        const hrs  = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
         const secs = Math.floor((diff % 60000) / 1000);
-        if (el) el.textContent = String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+
+        let label;
+        if (hrs > 0) {
+            label = String(hrs).padStart(2,'0') + 'j ' + String(mins).padStart(2,'0') + 'm ' + String(secs).padStart(2,'0') + 'd';
+        } else {
+            label = String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+        }
+        if (el) el.textContent = label;
 
         if (bar && diff < 120000) bar.classList.add('pw-countdown--urgent');
     }
@@ -407,15 +437,15 @@
                 '</svg>' +
                 '<div style="font-size:.9rem;font-weight:600;color:#fb923c;">Waktu Pembayaran Habis</div>' +
                 '<p style="font-size:.78rem;color:var(--pw-text-muted);line-height:1.6;max-width:240px;">Invoice ini sudah kadaluarsa. Buat invoice baru untuk melanjutkan top-up Gold.</p>' +
-                '<a href="{{ route('donate') }}" class="pw-btn pw-btn--gold pw-btn--sm" style="margin-top:.2rem;">Buat Invoice Baru</a>' +
+                '<a href="{{ route('cubi-shop') }}" class="pw-btn pw-btn--gold pw-btn--sm" style="margin-top:.2rem;">Buat Invoice Baru</a>' +
                 '</div>';
         }
         const guide = document.getElementById('payment-guide');
         if (guide) {
             guide.innerHTML =
                 '<div class="pw-invoice-guide__title" style="color:#fb923c;">Invoice Kadaluarsa</div>' +
-                '<p style="font-size:.82rem;color:var(--pw-text-muted);line-height:1.7;margin:.4rem 0 0;">Batas waktu 10 menit telah habis. Silakan buat invoice baru untuk melanjutkan pembayaran.</p>' +
-                '<a href="{{ route('donate') }}" class="pw-btn pw-btn--gold pw-btn--sm" style="margin-top:.9rem;display:inline-flex;">Buat Invoice Baru</a>';
+                '<p style="font-size:.82rem;color:var(--pw-text-muted);line-height:1.7;margin:.4rem 0 0;">Batas waktu 24 jam telah habis. Silakan buat invoice baru untuk melanjutkan pembayaran.</p>' +
+                '<a href="{{ route('cubi-shop') }}" class="pw-btn pw-btn--gold pw-btn--sm" style="margin-top:.9rem;display:inline-flex;">Buat Invoice Baru</a>';
         }
     }
 

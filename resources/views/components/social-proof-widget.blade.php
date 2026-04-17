@@ -5,7 +5,7 @@
     $__spSiteName = \App\Models\Setting::get('seo_title') ?: config('pw-config.server.name') ?: 'Perfect World';
 @endphp
 
-<div id="pw-sp-wrap" style="position:fixed;bottom:1.5rem;left:1.5rem;z-index:9997;width:min(296px,calc(100vw - 2rem));pointer-events:none;" aria-live="polite" aria-atomic="true">
+<div id="pw-sp-wrap" style="position:fixed;bottom:1.5rem;left:1.5rem;z-index:9997;width:min(340px,calc(100vw - 2rem));pointer-events:none;" aria-live="polite" aria-atomic="true">
     <div id="pw-sp-card" style="
         background: rgba(10,8,6,.96);
         border: 1px solid rgba(166,107,66,.4);
@@ -40,9 +40,9 @@
 
         {{-- Footer --}}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.6rem;padding-top:.5rem;border-top:1px solid rgba(166,107,66,.15);">
-            <span id="pw-sp-time" style="font-size:.68rem;color:rgba(196,157,109,.45);"></span>
-            <span style="display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem;color:#d4a860;font-weight:600;letter-spacing:.02em;">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span id="pw-sp-time" style="font-size:.7rem;color:rgba(196,157,109,.75);"></span>
+            <span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;color:#d4a860;font-weight:600;letter-spacing:.02em;">
+                <img src="/images/gif_icon/verified.gif" width="16" height="16" style="display:block;" alt="verified">
                 Valid Terverifikasi
             </span>
         </div>
