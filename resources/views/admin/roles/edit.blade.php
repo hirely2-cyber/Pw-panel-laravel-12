@@ -141,7 +141,8 @@
                 <span style="font-size:.9rem;font-weight:700;color:var(--pw-text-light);">Edit: {{ $roleName }}</span>
                 <span style="font-size:.74rem;color:var(--pw-text-muted);margin-left:.5rem;">ID:{{ $roleId }} &middot; Lv.{{ $roleLevel }} {{ $classMap[$roleOcc] ?? '' }}</span>
             </div>
-            <div style="display:flex;gap:.5rem;flex-shrink:0;">
+            <div style="display:flex;gap:.5rem;flex-shrink:0;flex-wrap:wrap;">
+                <a href="{{ route('admin.roles.role-xml', $roleId) }}" class="pw-adm-btn" style="font-size:.78rem;" title="XmlRole (Tomcat)">&lt;/&gt; XML</a>
                 <a href="{{ route('admin.roles.show', $roleId) }}" class="pw-adm-btn" style="font-size:.82rem;background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.35);color:#ef4444;display:inline-flex;align-items:center;gap:5px;">
                     <svg viewBox="0 0 16 16" width="13" fill="none"><path d="M10 6L6 10M6 6l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/></svg>
                     Batal

@@ -15,6 +15,11 @@ Schedule::command('pw:sync-ranking')->everyTenMinutes();
 // Sync event progress setiap 3 menit
 Schedule::command('pw:sync-event')->everyThreeMinutes();
 
+// Auto-distribute event rewards ke user yang sudah memenuhi syarat level (setiap 5 menit)
+// Register reward (100 Cubi) → char level >= register_req_level
+// Referral milestone        → referred user char level >= referral_req_level
+Schedule::command('pw:auto-distribute-event')->everyFiveMinutes();
+
 // Update Top Sultan setiap hari jam 03:00
 Schedule::command('pw:update-sultan')->dailyAt('03:00');
 

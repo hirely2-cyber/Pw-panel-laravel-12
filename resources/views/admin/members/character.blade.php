@@ -76,11 +76,19 @@
                 <span class="rl-badge rl-badge--offline">● Offline</span>
             @endif
         </div>
-        <div style="display:flex;gap:.5rem;margin-left:auto;">
-            <a href="{{ route('admin.members.character', [$user->ID, $character->role_id]) }}?view=xml"
+        <div style="display:flex;gap:.5rem;margin-left:auto;flex-wrap:wrap;">
+            @if(request('view') === 'xml' || request('view') === 'raw')
+            <a href="{{ route('admin.members.character', [$user->ID, $character->role_id]) }}"
                class="pw-adm-btn pw-adm-btn--ghost" style="font-size:.72rem;padding:.3rem .6rem;">
+                ← GUI Editor
+            </a>
+            @else
+            <a href="{{ route('admin.members.character', [$user->ID, $character->role_id]) }}?view=xml"
+               class="pw-adm-btn pw-adm-btn--ghost" style="font-size:.72rem;padding:.3rem .6rem;"
+               title="Edit Role XML (XmlRole)">
                 &lt;/&gt; XML
             </a>
+            @endif
             <a href="{{ route('admin.members.show', $user->ID) }}"
                class="pw-adm-btn pw-adm-btn--ghost" style="font-size:.72rem;padding:.3rem .6rem;">
                 ← Back
@@ -89,28 +97,14 @@
     </div>
 </div>
 
-@if(request('view') === 'xml')
-{{-- ═══════════════ XML / Raw Data View ═══════════════ --}}
-<div class="pw-adm-card" style="margin-bottom:.8rem;">
-    <div style="display:flex;align-items:center;gap:.8rem;padding:.1rem 0;">
-        <div style="font-size:.9rem;font-weight:700;color:var(--pw-gold);">
-            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:.25rem;"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
-            Raw Character Data — {{ $base['name'] ?? $character->name }}
-        </div>
-        <a href="{{ route('admin.members.character', [$user->ID, $character->role_id]) }}"
-           class="pw-adm-btn pw-adm-btn--ghost" style="font-size:.72rem;padding:.3rem .6rem;margin-left:auto;">
-            ← GUI Editor
-        </a>
-    </div>
-</div>
-<div class="pw-adm-card">
-    <div class="pw-adm-card__title">Raw Data (JSON)</div>
-    <p style="font-size:.68rem;color:var(--pw-text-muted);margin-bottom:.5rem;">
-        ⚠ Read-only view. Equivalent of rolexml.jsp in pwAdmin.
-    </p>
-    <pre class="rl-xml-pre">{{ json_encode($roleData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
-</div>
-
+@if(request('view') === 'xml' || request('view') === 'raw')
+@include('admin.partials.role-xml-panel', [
+    'formAction' => route('admin.members.character.xml.save', ['user' => $user, 'roleId' => $character->role_id]),
+    'charName' => $base['name'] ?? $character->name,
+    'roleXml' => $roleXml,
+    'roleXmlError' => $roleXmlError,
+    'pwadminRolexmlUrl' => $pwadminRolexmlUrl,
+])
 @else
 {{-- ═══════════════ GUI Detail View ═══════════════ --}}
 
@@ -181,9 +175,13 @@
         </div>
         <div class="rl-field">
             <span class="rl-flabel">Vigor Points</span>
-            <select class="rl-select" disabled>
+            <select name="vigor" class="rl-select">
+                @php
+                    $curV = (int) ($prop['max_ap'] ?? 0);
+                    $selV = array_key_exists($curV, $vigorOptions) ? $curV : 0;
+                @endphp
                 @foreach($vigorOptions as $vVal => $vLabel)
-                <option value="{{ $vVal }}" {{ ($prop['max_ap'] ?? 0) == $vVal ? 'selected' : '' }}>{{ $vLabel }}</option>
+                <option value="{{ $vVal }}" {{ $selV === (int) $vVal ? 'selected' : '' }}>{{ $vLabel }}</option>
                 @endforeach
             </select>
         </div>
@@ -213,33 +211,24 @@
             <span x-show="sel" x-text="sel ? itemName(sel.id) : ''" style="font-size:.75rem;font-weight:600;color:var(--pw-gold);">&nbsp;</span>
         </div>
 
-        {{-- Item Grid --}}
+        {{-- Item Grid: in-game style equipment paperdoll (pw-panel 1.6.5) + inv/store table --}}
+        <div class="rl-pw-paper">
+            @include('admin.members._character-equipment-paperdoll', ['equip' => $equip, 'base' => $base, 'itemNames' => $itemNames])
+        </div>
         <div class="rl-item-scroll">
             <table class="rl-item-table">
-                <tr><td colspan="{{ $breakcol }}" class="rl-item-header">Equipment</td></tr>
-                @php $eqpItems = $equip['items'] ?? []; $br = 0; @endphp
-                @foreach($eqpItems as $item)
-                    @if($br % $breakcol == 0)<tr>@endif
-                    <td class="rl-item-td" @click="select({{ json_encode($item) }}, 'equipment', {{ $br }})"
-                        :class="{ 'rl-item-td--active': sel && sel.id=={{ $item['id'] }} && sel.pos=={{ $item['pos'] }} && selGroup==='equipment' }">
-                        <img src="/storage/icons/{{ $item['id'] }}.gif" onerror="this.src='/storage/icons/0.gif'" x-bind:title="itemName({{ $item['id'] }})" width="30" height="30">
-                    </td>
-                    @php $br++; @endphp
-                    @if($br % $breakcol == 0)</tr>@endif
-                @endforeach
-                @if($br % $breakcol != 0)
-                    @for($f = $br % $breakcol; $f < $breakcol; $f++)<td class="rl-item-td rl-item-td--empty"></td>@endfor
-                    </tr>
-                @endif
-
                 <tr><td colspan="{{ $breakcol }}" class="rl-item-header">Inventory</td></tr>
                 @php $invItems = $pocket['items'] ?? []; $br = 0; @endphp
                 @foreach($invItems as $item)
                     @if($item['id'] <= 0) @php $br++; @endphp @continue @endif
                     @if($br % $breakcol == 0)<tr>@endif
-                    <td class="rl-item-td" @click="select({{ json_encode($item) }}, 'inventory', {{ $br }})"
-                        :class="{ 'rl-item-td--active': sel && sel.id=={{ $item['id'] }} && sel.pos=={{ $item['pos'] }} && selGroup==='inventory' }">
-                        <img src="/storage/icons/{{ $item['id'] }}.gif" onerror="this.src='/storage/icons/0.gif'" x-bind:title="itemName({{ $item['id'] }})" width="30" height="30">
+                    <td class="rl-item-td">
+                        <div class="rl-item-slot"
+                             @click="select({{ json_encode($item) }}, 'inventory', {{ $br }})"
+                             x-bind:title="itemName({{ $item['id'] }})"
+                             :class="{ 'rl-item-slot--active': sel && sel.id=={{ $item['id'] }} && sel.pos=={{ $item['pos'] }} && selGroup==='inventory' }">
+                            <img class="rl-item-icon" src="/storage/icons/{{ $item['id'] }}.gif" onerror="this.src='/storage/icons/0.gif'" width="40" height="40" alt="">
+                        </div>
                     </td>
                     @php $br++; @endphp
                     @if($br % $breakcol == 0)</tr>@endif
@@ -254,9 +243,13 @@
                 @foreach($storeItems as $item)
                     @if($item['id'] <= 0) @php $br++; @endphp @continue @endif
                     @if($br % $breakcol == 0)<tr>@endif
-                    <td class="rl-item-td" @click="select({{ json_encode($item) }}, 'storage', {{ $br }})"
-                        :class="{ 'rl-item-td--active': sel && sel.id=={{ $item['id'] }} && sel.pos=={{ $item['pos'] }} && selGroup==='storage' }">
-                        <img src="/storage/icons/{{ $item['id'] }}.gif" onerror="this.src='/storage/icons/0.gif'" x-bind:title="itemName({{ $item['id'] }})" width="30" height="30">
+                    <td class="rl-item-td">
+                        <div class="rl-item-slot"
+                             @click="select({{ json_encode($item) }}, 'storage', {{ $br }})"
+                             x-bind:title="itemName({{ $item['id'] }})"
+                             :class="{ 'rl-item-slot--active': sel && sel.id=={{ $item['id'] }} && sel.pos=={{ $item['pos'] }} && selGroup==='storage' }">
+                            <img class="rl-item-icon" src="/storage/icons/{{ $item['id'] }}.gif" onerror="this.src='/storage/icons/0.gif'" width="40" height="40" alt="">
+                        </div>
                     </td>
                     @php $br++; @endphp
                     @if($br % $breakcol == 0)</tr>@endif
@@ -343,15 +336,89 @@
 .rl-badge--online { background:rgba(22,163,106,.15); color:#16a36a; }
 .rl-badge--offline { background:rgba(220,38,38,.12); color:#dc2626; }
 
-/* ── Item scroll box ── */
-.rl-item-scroll { height:160px; overflow:auto; border:1px solid var(--pw-border); border-radius:6px; padding:2px; margin-bottom:.3rem; }
-.rl-item-table { width:100%; border-collapse:collapse; }
+/* ── Item scroll box (grid: fixed slot = hover/click, icon scaled up) ── */
+.rl-item-scroll { height:220px; overflow:auto; border:1px solid var(--pw-border); border-radius:6px; padding:4px; margin-bottom:.3rem; }
+.rl-item-table { width: max-content; max-width: 100%; margin: 0 auto; border-collapse: separate; border-spacing: 2px; }
 .rl-item-header { padding:2px 4px; font-weight:700; font-size:.65rem; color:var(--pw-text-muted); text-align:center; background:rgba(255,255,255,.03); }
-.rl-item-td { text-align:center; padding:2px; cursor:pointer; border-radius:3px; transition:background .1s; }
-.rl-item-td:hover { background:rgba(200,151,42,.12); }
-.rl-item-td--active { background:rgba(200,151,42,.2) !important; box-shadow:inset 0 0 0 1px var(--pw-gold); }
-.rl-item-td--empty { cursor:default; }
-.rl-item-td img { image-rendering:pixelated; vertical-align:middle; }
+.rl-item-td { width: 48px; min-width: 48px; max-width: 48px; padding: 0; text-align: center; vertical-align: middle; line-height: 0; }
+.rl-item-slot {
+    display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+    width: 44px; height: 44px; margin: 0 auto; cursor: pointer; border-radius: 5px;
+    transition: background .1s, box-shadow .1s;
+}
+.rl-item-slot:hover { background: rgba(200,151,42,.12); }
+.rl-item-slot--active { background: rgba(200,151,42,.2) !important; box-shadow: inset 0 0 0 1px var(--pw-gold); }
+.rl-item-td--empty { cursor: default; min-height: 44px; }
+.rl-item-icon { display: block; width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; vertical-align: middle; }
+[data-theme="light"] .rl-item-slot:hover { background: rgba(200, 151, 42, .14); }
+[data-theme="light"] .rl-item-slot--active { background: rgba(200, 151, 42, .22) !important; }
+
+/* ── PW in-game style equipment paperdoll (assets: /public/pw/ui/) ── */
+.rl-pw-paper {
+    border: 1px solid var(--pw-border);
+    border-radius: 8px;
+    background: rgba(0,0,0,.12);
+    padding: 8px 10px 10px;
+    margin-bottom: .5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+[data-theme="light"] .rl-pw-paper { background: #f1ede6; }
+.rl-pw-paper__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed var(--pw-border); }
+.rl-pw-paper__head-title { font-size: .64rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--pw-gold); }
+.rl-pw-paper__head-meta { font-size: .58rem; color: var(--pw-text-muted); font-family: ui-monospace, monospace; }
+/* Fixed 313×273 — slot coordinates match iweb; do not scale background */
+.rl-pw-paper .player__equipment {
+    position: relative; margin: 4px auto 0; min-width: 313px; width: 313px; height: 273px;
+    background: url('/pw/ui/equipment-bg.png') no-repeat center top;
+}
+.rl-pw-paper .player__equipment:before {
+    content: ''; position: absolute; left: 120px; top: 20px; width: 79px; height: 150px; z-index: 0; pointer-events: none; opacity: .72;
+}
+.rl-pw-paper .player__equipment.male:before   { background: url('/pw/ui/equipment-male.png') no-repeat; }
+.rl-pw-paper .player__equipment.female:before { background: url('/pw/ui/equipment-female.png') no-repeat; }
+.rl-pw-paper .player__equipment-item {
+    position: absolute; width: 32px; height: 32px; z-index: 2; box-sizing: border-box;
+    background: rgba(0,0,0,.2); border: 1px solid rgba(90,70,48,.5);
+    cursor: pointer; transition: filter .1s, border-color .1s, box-shadow .1s;
+}
+.rl-pw-paper .player__equipment-item.has-gear:hover { filter: brightness(1.15); border-color: var(--pw-gold); }
+.rl-pw-paper .player__equipment-item.is-sel { box-shadow: inset 0 0 0 2px var(--pw-gold); border-color: var(--pw-gold); }
+.rl-pw-paper .player__equipment-item.eq-slot-empty { pointer-events: none; opacity: .35; border-color: rgba(80,60,40,.3); }
+.rl-pw-paper .player__equipment-item > img { width: 32px; height: 32px; display: block; image-rendering: pixelated; }
+/* Slot layout — from iweb (hirely2-cyber/pw-panel-1.6.5- public/panel.css) */
+.rl-pw-paper .player__equipment-item.cell-0  { top: 93px; left: 273px; }
+.rl-pw-paper .player__equipment-item.cell-1  { top:  3px; left: 235px; }
+.rl-pw-paper .player__equipment-item.cell-2  { top: 48px; left:   8px; }
+.rl-pw-paper .player__equipment-item.cell-3  { top: 48px; left:  46px; }
+.rl-pw-paper .player__equipment-item.cell-4  { top: 48px; left: 235px; }
+.rl-pw-paper .player__equipment-item.cell-5  { top: 93px; left:  46px; }
+.rl-pw-paper .player__equipment-item.cell-6  { top: 93px; left: 235px; }
+.rl-pw-paper .player__equipment-item.cell-7  { top: 138px; left: 235px; }
+.rl-pw-paper .player__equipment-item.cell-8  { top: 93px; left:   8px; }
+.rl-pw-paper .player__equipment-item.cell-9  { top: 138px; left:   8px; }
+.rl-pw-paper .player__equipment-item.cell-10 { top: 138px; left:  46px; }
+.rl-pw-paper .player__equipment-item.cell-11 { top: 138px; left: 273px; }
+.rl-pw-paper .player__equipment-item.cell-12 { top:  3px; left:  84px; }
+.rl-pw-paper .player__equipment-item.cell-13 { top: 188px; left: 167px; }
+.rl-pw-paper .player__equipment-item.cell-14 { top: 188px; left: 220px; }
+.rl-pw-paper .player__equipment-item.cell-15 { top: 188px; left: 273px; }
+.rl-pw-paper .player__equipment-item.cell-16 { top: 188px; left: 114px; }
+.rl-pw-paper .player__equipment-item.cell-17 { top: 48px; left: 273px; }
+.rl-pw-paper .player__equipment-item.cell-18 { top: 48px; left:  84px; }
+.rl-pw-paper .player__equipment-item.cell-19 { top:  3px; left: 273px; }
+.rl-pw-paper .player__equipment-item.cell-20 { top:  3px; left:   8px; }
+.rl-pw-paper .player__equipment-item.cell-21 { top:  3px; left:  46px; }
+.rl-pw-paper .player__equipment-item.cell-22 { top: 93px; left:  84px; }
+.rl-pw-paper .player__equipment-item.cell-23 { top: 138px; left:  84px; }
+.rl-pw-paper .player__equipment-item.cell-24 { top:  3px; left: 197px; }
+.rl-pw-paper .player__equipment-item.cell-25 { top: 188px; left:  61px; }
+.rl-pw-paper .player__equipment-item.cell-26 { top: 48px; left: 197px; }
+.rl-pw-paper .player__equipment-item.cell-27 { top: 93px; left: 197px; }
+.rl-pw-paper .player__equipment-item.cell-28 { top: 136px; left: 197px; }
+.rl-pw-paper .player__equipment-item.cell-29 { top: 188px; left:   8px; }
+.rl-pw-paper .player__equipment-item.cell-30 { top:  3px; left: 130px; }
+.rl-pw-paper .player__equipment-item.cell-31 { top:  3px; left: 168px; }
 
 /* ── XML pre ── */
 .rl-xml-pre {
@@ -385,4 +452,7 @@ function roleItems() {
     };
 }
 </script>
+@if(request('view') === 'xml' || request('view') === 'raw')
+@include('admin.partials.role-xml-assets', ['roleXml' => $roleXml ?? ''])
+@endif
 @endsection

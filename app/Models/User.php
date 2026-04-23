@@ -16,10 +16,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Services\GameDbService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use App\Notifications\ResetPasswordNotification;
 
 /**
  * Perfect World User Model
@@ -288,27 +290,148 @@ class User extends Authenticatable
 
     /**
      * Get all game characters (roles) for this account.
+     *
+     * Sumber utama: MySQL `roles` WHERE account_id = userId (diisi Tomcat saat sync).
+     * Fallback: GetUser(3002) dari gamedbd — daftar role_id milik akun ini.
      */
+    public static function gameCharacterRoleIdSlotBoundsForUserId(int $userId): ?array
+    {
+        return null;
+    }
+
+    public function gameCharacterRoleIdSlotBounds(): ?array
+    {
+        return null;
+    }
+
     public function gameCharacters(): \Illuminate\Support\Collection
     {
-        return Cache::remember('pw.user.characters.' . $this->ID, 120, function () {
-            try {
-                return DB::connection('mysql_game')
-                    ->table('roles')
-                    ->where('account_id', $this->ID)
-                    ->get()
-                    ->map(fn ($r) => (object) [
-                        'role_id'    => $r->role_id,
-                        'name'       => $r->role_name,
-                        'level'      => $r->role_level,
-                        'class'      => self::CLASS_MAP[$r->role_occupation] ?? 'Unknown',
-                        'class_id'   => $r->role_occupation,
-                        'gender'     => $r->role_gender,
-                    ]);
-            } catch (\Throwable $e) {
-                return collect();
+        return Cache::remember('pw.user.characters.v9.' . $this->ID, 120, function () {
+            $uid = (int) $this->ID;
+            $gameDb = new GameDbService();
+
+            $out = $this->loadGameCharactersByAccountId($gameDb, $uid);
+            if ($out->isNotEmpty()) {
+                return $out;
             }
+
+            return $this->loadGameCharactersFromGetUserInRange(
+                $gameDb,
+                $uid,
+                PHP_INT_MIN,
+                PHP_INT_MAX
+            );
         });
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, object>
+     */
+    private function loadGameCharactersByAccountId(
+        GameDbService $gameDb,
+        int $uid
+    ): \Illuminate\Support\Collection {
+        $out = collect();
+        try {
+            $fromMysql = DB::connection('mysql_game')
+                ->table('roles')
+                ->where('account_id', $uid)
+                ->get();
+        } catch (\Throwable $e) {
+            return $out;
+        }
+
+        foreach ($fromMysql as $r) {
+            $d = $gameDb->getRoleData((int) $r->role_id);
+            if ($d === null) {
+                $out->push($this->mapGameRoleTableRow($r));
+
+                continue;
+            }
+            if ((int) ($d['base']['userid'] ?? 0) === $uid) {
+                $out->push($this->mapGameRoleTableRow($r));
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, object>
+     */
+    private function loadGameCharactersFromGetUserInRange(
+        GameDbService $gameDb,
+        int $uid,
+        int $minRid,
+        int $maxRid
+    ): \Illuminate\Support\Collection {
+        $userPack = $gameDb->getUserDataFromGamedb($uid);
+        if ($userPack === null
+            || ! is_array($userPack['role_ids'] ?? null)
+            || count($userPack['role_ids']) === 0) {
+            return collect();
+        }
+
+        $ids = array_map('intval', $userPack['role_ids']);
+        if ($minRid !== PHP_INT_MIN || $maxRid !== PHP_INT_MAX) {
+            $ids = array_values(array_filter(
+                $ids,
+                static fn (int $rid) => $rid >= $minRid && $rid <= $maxRid
+            ));
+        }
+        sort($ids, SORT_NUMERIC);
+        if (count($ids) === 0) {
+            return collect();
+        }
+
+        $rows = DB::connection('mysql_game')
+            ->table('roles')
+            ->whereIn('role_id', $ids)
+            ->get()
+            ->keyBy('role_id');
+
+        $out = collect();
+        foreach ($ids as $rid) {
+            $row = $rows->get($rid);
+            if ($row) {
+                $out->push($this->mapGameRoleTableRow($row));
+
+                continue;
+            }
+            $live = $gameDb->getRoleData($rid);
+            if (! $live) {
+                continue;
+            }
+            $b = $live['base'];
+            $s = $live['status'] ?? [];
+            $out->push((object) [
+                'role_id'    => $rid,
+                'name'       => $b['name'] ?? '?',
+                'level'      => (int) ($s['level'] ?? 0),
+                'class'      => self::CLASS_MAP[$b['cls'] ?? 0] ?? 'Unknown',
+                'class_id'   => (int) ($b['cls'] ?? 0),
+                'gender'     => (int) ($b['gender'] ?? 0),
+            ]);
+        }
+
+        return $out;
+    }
+
+    private function mapGameRoleTableRow(object $r): object
+    {
+        return (object) [
+            'role_id'    => (int) $r->role_id,
+            'name'       => $r->role_name,
+            'level'      => (int) $r->role_level,
+            'class'      => self::CLASS_MAP[$r->role_occupation] ?? 'Unknown',
+            'class_id'   => (int) $r->role_occupation,
+            'gender'     => (int) $r->role_gender,
+        ];
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 }
 

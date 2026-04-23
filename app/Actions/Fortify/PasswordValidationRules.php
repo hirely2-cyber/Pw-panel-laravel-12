@@ -20,21 +20,21 @@ trait PasswordValidationRules
 {
     protected function passwordRules(): array
     {
-        return ['required', 'string', 'min:6', 'confirmed', 'regex:/^[a-z0-9]+$/'];
+        return ['required', 'string', 'min:6', 'max:20', 'confirmed', 'regex:/^[a-z0-9]+$/'];
     }
 
     protected function registerPasswordRules(): array
     {
-        return ['required', 'string', 'min:6', 'confirmed', 'regex:/^[a-z0-9]+$/'];
+        return ['required', 'string', 'min:6', 'max:20', 'confirmed', 'regex:/^[a-z0-9]+$/'];
     }
 
     protected function updatePasswordRules(): array
     {
-        return ['required', 'string', 'min:6', 'confirmed', 'regex:/^[a-z0-9]+$/'];
+        return ['required', 'string', 'min:6', 'max:20', 'confirmed', 'regex:/^[a-z0-9]+$/'];
     }
 
     protected function resetPasswordRules(): array
     {
-        return ['required', 'string', 'min:6', 'regex:/^[a-z0-9]+$/'];
+        return ['required', 'string', 'min:6', 'max:20', 'regex:/^[a-z0-9]+$/'];
     }
 }

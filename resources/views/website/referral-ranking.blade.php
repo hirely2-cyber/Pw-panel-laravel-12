@@ -79,7 +79,7 @@
                     </div>
                 </div>
                 @if($r)
-                <div class="pw-podium__name">{{ $r->name }}</div>
+                <div class="pw-podium__name">{{ ($r->truename && trim($r->truename) !== '') ? $r->truename : $r->name }}</div>
                 <div class="pw-podium__sub" style="color:var(--pw-text-muted);">{{ $r->referral_code }}</div>
                 <div class="pw-podium__level" style="color:{{ $rankColors[$idx] }}">{{ $r->referral_count }} Referral</div>
                 <div class="pw-podium__exp">
@@ -104,7 +104,7 @@
                 <thead>
                     <tr>
                         <th style="text-align:center;width:50px;">#</th>
-                        <th>Username</th>
+                        <th>Nama</th>
                         <th style="text-align:center;">Kode Referral</th>
                         <th style="text-align:center;">Total Referral</th>
                         <th style="text-align:center;">Qualified (Lv.{{ $event->referral_req_level }})</th>
@@ -122,7 +122,7 @@
                                 <span class="pw-rank">{{ $rank }}</span>
                             @endif
                         </td>
-                        <td class="pw-ranking__name">{{ $referrer->name }}</td>
+                        <td class="pw-ranking__name">{{ ($referrer->truename && trim($referrer->truename) !== '') ? $referrer->truename : $referrer->name }}</td>
                         <td style="text-align:center;font-family:monospace;font-size:.82rem;color:var(--pw-text-muted);">{{ $referrer->referral_code }}</td>
                         <td style="text-align:center;">
                             <span style="font-weight:800;color:#c8972a;font-size:1.05rem;">{{ $referrer->referral_count }}</span>

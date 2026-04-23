@@ -243,7 +243,7 @@ class HomeController extends Controller
             $reqLevel = $event->referral_req_level ?? 50;
 
             // Users who have referrals, ordered by count
-            $referrers = User::select('users.ID', 'users.name', 'users.referral_code', 'users.creatime')
+            $referrers = User::select('users.ID', 'users.name', 'users.truename', 'users.referral_code', 'users.creatime')
                 ->selectRaw('(SELECT COUNT(*) FROM users AS r WHERE r.referred_by = users.ID) as referral_count')
                 ->having('referral_count', '>', 0)
                 ->orderByDesc('referral_count')
@@ -253,7 +253,7 @@ class HomeController extends Controller
             // Add referred users for each referrer
             $referrerIds = $referrers->pluck('ID')->toArray();
             $referredMap = User::whereIn('referred_by', $referrerIds)
-                ->get(['ID', 'name', 'referred_by', 'creatime'])
+                ->get(['ID', 'name', 'truename', 'referred_by', 'creatime'])
                 ->groupBy('referred_by');
 
             // Batch get max levels of referred users
@@ -277,7 +277,7 @@ class HomeController extends Controller
                 $referrer->referred_users = $referred->map(function ($u) use ($maxLevelMap, $reqLevel) {
                     $maxLevel = $maxLevelMap[$u->ID] ?? 0;
                     return (object) [
-                        'name'     => $u->name,
+                        'name'     => ($u->truename && trim($u->truename) !== '') ? $u->truename : $u->name,
                         'joined'   => $u->creatime,
                         'level'    => $maxLevel,
                         'level_ok' => $maxLevel >= $reqLevel,

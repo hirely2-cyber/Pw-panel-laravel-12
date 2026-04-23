@@ -62,4 +62,17 @@ return [
     'pwadmin_user' => env('PW_ADMIN_USER', 'admin'),
     'pwadmin_pass' => env('PW_ADMIN_PASS', ''),
 
+    // Same default token as api_sync_roles.jsp (change both if you rotate secrets)
+    'pwadmin_api_token' => env('PW_ADMIN_API_TOKEN', 'pw_panel_sync_2026'),
+
+    /*
+    | Set true agar setelah api_sync_roles.jsp panel juga memanggil role.jsp?action=sqlsync
+    | (sama seperti `php artisan pw:sync-roles`) — di banyak build pwAdmin ini yang mengisi
+    | tabel `roles` penuh dari gamedb. false = hanya API JSON.
+    */
+    'roles_sync_also_sqlsync' => filter_var(
+        env('PW_ROLES_SYNC_ALSO_SQLSYNC', '1'),
+        FILTER_VALIDATE_BOOL,
+    ),
+
 ];

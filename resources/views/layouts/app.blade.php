@@ -70,7 +70,7 @@
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600;700&display=swap"></noscript>
 
     {{-- Theme: apply before paint to prevent FOUC --}}
-    <script>!function(){var t=localStorage.getItem('pw-theme')||'light';document.documentElement.setAttribute('data-theme',t);}()</script>
+    <script>!function(){var t=localStorage.getItem('pw-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}()</script>
     {{-- Styles compiled via Vite --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -233,6 +233,9 @@
                 <li><a href="{{ route('download') }}" class="pw-nav__link {{ request()->routeIs('download') ? 'is-active' : '' }}">
                     <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M8 2v8M5 7.5L8 10.5 11 7.5M3 12.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     {{ __('main.nav_download') }}</a></li>
+                <li><a href="{{ route('dungeon-vote') }}" class="pw-nav__link {{ request()->routeIs('dungeon-vote*') ? 'is-active' : '' }}">
+                    <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M8 1L2 4.5v4c0 3.2 2.5 6.2 6 7 3.5-0.8 6-3.8 6-7v-4L8 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8l1.5 1.5L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Dungeon Vote</a></li>
             </ul>
 
             {{-- Right: User / Auth --}}
@@ -336,7 +339,8 @@
                     @else
                         {{-- Halaman lain: tampilkan Fast-Login Hover Panel --}}
                         @php
-                            $hasLoginError = $errors->hasAny(['name','password','captcha','email']);
+                            $__isLoginRoute = request()->routeIs('login') || request()->is('auth/login');
+                            $hasLoginError = $__isLoginRoute && $errors->hasAny(['name','password','captcha','email']);
                         @endphp
                         <div class="pw-fastlogin" x-data="fastLogin()"
                              x-init="if({{ $hasLoginError ? 'true' : 'false' }}) { open = true; loadCaptcha(); }"
@@ -453,6 +457,9 @@
             <a href="{{ route('download') }}" class="pw-mobile-link">
                 <svg viewBox="0 0 16 16" fill="none" width="16"><path d="M8 2v8M5 7.5L8 10.5 11 7.5M3 12.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 {{ __('main.nav_download') }}</a>
+            <a href="{{ route('dungeon-vote') }}" class="pw-mobile-link {{ request()->routeIs('dungeon-vote*') ? 'is-active' : '' }}">
+                <svg viewBox="0 0 16 16" fill="none" width="16"><path d="M8 1L2 4.5v4c0 3.2 2.5 6.2 6 7 3.5-0.8 6-3.8 6-7v-4L8 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8l1.5 1.5L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Dungeon Vote</a>
             <div class="pw-mobile-divider"></div>
             @auth
                 @php $__mobileGold = auth()->user()->money; @endphp

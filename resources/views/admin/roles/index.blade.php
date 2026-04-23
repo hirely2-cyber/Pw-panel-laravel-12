@@ -87,7 +87,7 @@
             </div>
         </div>
         <div style="font-size:.74rem;color:var(--pw-text-muted);margin-top:.5rem;padding:.35rem .6rem;border-radius:6px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);">
-            Sync akan mengambil data character dari game server dan menyimpan ke MySQL. Server game harus running, maps harus stopped.
+            <strong>Sync hanya menyalin</strong> isi gamedb ke tabel MySQL <code style="font-size:.72rem;opacity:.9;">roles</code> — <strong>Role ID (role_id) tidak diacak ulang</strong> lewat panel. ID itu ditetapkan waktu char dibuat di game; diulang sync berkali-kali hanya me-refresh <em>nama, level, dll.</em>, bukan mengganti nomor ID. Kalau ID harus mengikuti pola khusus (misalnya = user id), itu di <strong>server game / gamedbd</strong> (create character), bukan lewat Tomcat/Laravel. Pastikan gamedbd jalan, maps stopped saat impor, dan <code>PW_GAME_DB_*</code> panel mengarah ke MySQL yang sama dengan pwAdmin.
         </div>
     </div>
 
@@ -159,6 +159,9 @@
                             <a href="{{ $sortUrl('role_id') }}" class="rl-sort-link {{ $sortClass('role_id') }}">Role ID {{ $sortIcon('role_id') }}</a>
                         </th>
                         <th style="text-align:left;padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.72rem;color:var(--pw-text-muted);">
+                            <a href="{{ $sortUrl('account_id') }}" class="rl-sort-link {{ $sortClass('account_id') }}">User ID {{ $sortIcon('account_id') }}</a>
+                        </th>
+                        <th style="text-align:left;padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.72rem;color:var(--pw-text-muted);">
                             <a href="{{ $sortUrl('role_name') }}" class="rl-sort-link {{ $sortClass('role_name') }}">Character {{ $sortIcon('role_name') }}</a>
                         </th>
                         <th style="text-align:center;padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.72rem;color:var(--pw-text-muted);">
@@ -182,6 +185,13 @@
                     @forelse($roles as $r)
                         <tr>
                             <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;font-family:monospace;">{{ $r->role_id }}</td>
+                            <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;font-family:monospace;">
+                                @if($r->account_id)
+                                    <a href="{{ route('admin.members.show', $r->account_id) }}" style="color:#f0a500;text-decoration:none;" title="Lihat member">{{ $r->account_id }}</a>
+                                @else
+                                    <span style="color:var(--pw-text-muted);">—</span>
+                                @endif
+                            </td>
                             <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.82rem;font-weight:600;">{{ $r->role_name }}</td>
                             <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.82rem;text-align:center;font-weight:700;">{{ $r->role_level }}</td>
                             <td style="padding:.55rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;">
@@ -208,7 +218,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" style="padding:2rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.85rem;color:var(--pw-text-muted);text-align:center;">
+                            <td colspan="10" style="padding:2rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.85rem;color:var(--pw-text-muted);text-align:center;">
                                 Belum ada data character. Klik <strong>Sync Roles</strong> untuk mengambil data dari game server.
                             </td>
                         </tr>
@@ -258,7 +268,11 @@ async function syncRoles() {
         msg.textContent = data.message || 'Done';
         msg.style.color = data.ok ? '#50c878' : '#ef4444';
         if (data.ok) {
-            setTimeout(() => location.reload(), 1500);
+            setTimeout(() => {
+                const u = new URL(window.location.href);
+                u.searchParams.set('_sync', String(Date.now()));
+                window.location.replace(u.toString());
+            }, 1200);
         }
     })
     .catch(err => {

@@ -176,12 +176,41 @@
         <button type="submit" class="pw-adm-btn">Start Event</button>
     </form>
     @elseif($event->status === 'active')
-    <form method="POST" action="{{ route('admin.events.toggle', $event) }}" style="display:inline;"
-          data-confirm="Akhiri Event|Akhiri event pre-launch ini?"
+    {{-- INFO: Auto-distribute sudah aktif, tidak perlu klik manual --}}
+    <div style="background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);border-radius:8px;padding:.55rem .9rem;display:inline-flex;align-items:center;gap:.5rem;font-size:.78rem;color:#86efac;">
+        <svg viewBox="0 0 20 20" fill="none" width="15" style="flex-shrink:0;">
+            <path d="M10 2a8 8 0 110 16A8 8 0 0110 2z" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M6.5 10l2.5 2.5 4-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Distribusi <strong>otomatis</strong> aktif — reward dikirim tiap 5 menit saat user mencapai level syarat</span>
+    </div>
+    <form method="POST" action="{{ route('admin.events.toggle', $event) }}" style="display:inline;margin-left:.5rem;"
+          data-confirm="Akhiri Event|Akhiri event pre-launch ini? Distribusi otomatis akan berhenti."
           data-confirm-variant="danger" data-confirm-ok="Ya, Akhiri">
         @csrf
         <button type="submit" class="pw-adm-btn pw-adm-btn--danger">End Event</button>
     </form>
+    {{-- Trigger manual jika admin butuh force-distribute sekarang --}}
+    <form method="POST" action="{{ route('admin.events.distribute-referrals', $event) }}" style="display:inline;margin-left:.5rem;"
+          data-confirm="Force Distribute Sekarang|Jalankan distribusi referral sekarang (biasanya otomatis tiap 5 menit)?"
+          data-confirm-variant="success" data-confirm-ok="Ya, Jalankan">
+        @csrf
+        <button type="submit" class="pw-adm-btn" style="background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);color:#38bdf8;font-size:.72rem;display:inline-flex;align-items:center;gap:.3rem;">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="12"><path d="M6.3 4.7a1 1 0 011.4 0l5 5a1 1 0 010 1.4l-5 5A1 1 0 016.3 14.7L10.6 10 6.3 5.3a1 1 0 010-1.6z"/></svg>
+            Force Referral Sekarang
+        </button>
+    </form>
+    @if($event->register_rewards)
+    <form method="POST" action="{{ route('admin.events.distribute-register', $event) }}" style="display:inline;margin-left:.3rem;"
+          data-confirm="Force Distribute Sekarang|Jalankan distribusi register reward sekarang (biasanya otomatis tiap 5 menit)?"
+          data-confirm-variant="success" data-confirm-ok="Ya, Jalankan">
+        @csrf
+        <button type="submit" class="pw-adm-btn" style="background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);color:#4ade80;font-size:.72rem;display:inline-flex;align-items:center;gap:.3rem;">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="12"><path d="M6.3 4.7a1 1 0 011.4 0l5 5a1 1 0 010 1.4l-5 5A1 1 0 016.3 14.7L10.6 10 6.3 5.3a1 1 0 010-1.6z"/></svg>
+            Force Register Sekarang
+        </button>
+    </form>
+    @endif
     @elseif($event->status === 'ended')
     <form method="POST" action="{{ route('admin.events.distribute-referrals', $event) }}" style="display:inline;"
           data-confirm="Distribute Referral Rewards|Distribusikan Cubi Gold ke semua referrer yang memenuhi milestone?"

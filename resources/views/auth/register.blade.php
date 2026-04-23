@@ -107,7 +107,14 @@
                                 class="pw-form__input pw-form__input--icon {{ $errors->has('password') ? 'is-invalid' : '' }}"
                                 required autocomplete="new-password" placeholder="{{ __('main.auth_password_reg_placeholder') }}">
                         </div>
-                        @error('password') <p class="pw-form__error">{{ $message }}</p> @enderror
+                        @error('password')
+                            <p class="pw-form__error">{{ $message }}</p>
+                        @else
+                            <p style="margin:.4rem 0 0;font-size:.75rem;color:var(--pw-text-muted);line-height:1.5;">
+                                Gunakan huruf kecil (a-z) dan angka (0-9) saja &mdash; min 6, maks 20 karakter.<br>
+                                <span style="color:#f87171;">Huruf besar &amp; simbol tidak diperbolehkan.</span>
+                            </p>
+                        @enderror
                     </div>
                     <div class="pw-form__group">
                         <label for="password_confirmation" class="pw-form__label">{{ __('main.auth_password_confirm') }}</label>

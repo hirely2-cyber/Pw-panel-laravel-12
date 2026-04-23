@@ -13,6 +13,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\GameDbService;
+use App\Services\ItemDatabase;
+use App\Services\PwAdminRoleXmlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -236,7 +238,7 @@ class MemberController extends Controller
         return back()->with('success', 'Berhasil mengirim ' . number_format($request->amount) . ' Cubi Gold ke ' . $user->name . '. Akan diterima saat login/relog.');
     }
 
-    public function characterDetail(User $user, int $roleId): View
+    public function characterDetail(Request $request, User $user, int $roleId): View
     {
         // Verify this role belongs to the user
         $characters = $user->gameCharacters();
@@ -278,7 +280,16 @@ class MemberController extends Controller
             }
         }
 
-        return view('admin.members.character', compact('user', 'character', 'roleData', 'cubiData', 'itemNames'));
+        // ?view=xml: same XML as /pwAdmin/rolexml.jsp (Java XmlRole), fetched via api_rolexml_xml.jsp
+        $roleXml = null;
+        $roleXmlError = null;
+        if ($request->query('view') === 'xml' || $request->query('view') === 'raw') {
+            [$roleXml, $roleXmlError] = (new PwAdminRoleXmlService())->fetchRoleXmlWithError($roleId);
+        }
+
+        $pwadminRolexmlUrl = rtrim(config('pw-api.pwadmin_url', 'http://127.0.0.1:8080/pwAdmin/'), '/') . '/rolexml.jsp?ident=' . $roleId;
+
+        return view('admin.members.character', compact('user', 'character', 'roleData', 'cubiData', 'itemNames', 'roleXml', 'roleXmlError', 'pwadminRolexmlUrl'));
     }
 
     public function saveCharacter(Request $request, User $user, int $roleId): RedirectResponse
@@ -298,7 +309,7 @@ class MemberController extends Controller
         $gameDb = new GameDbService();
         $errors = [];
 
-        // 1. Update status fields (position, rep, exp, sp, cultivation) via PutRoleStatus
+        // 1. Update status fields + Vigor (max_ap) via PutRoleStatus — same set as pwAdmin role.jsp
         $statusChanges = [];
         $statusFields = ['world', 'pos_x', 'pos_z', 'pos_y', 'reputation', 'exp', 'sp', 'cultivation'];
         foreach ($statusFields as $field) {
@@ -307,9 +318,18 @@ class MemberController extends Controller
             }
         }
 
-        if (!empty($statusChanges)) {
+        $vigorVal = null;
+        if ($request->has('vigor')) {
+            $vigorVal = (int) $request->input('vigor');
+            if (!in_array($vigorVal, [0, 99, 199, 299, 399], true)) {
+                $errors[] = 'Vigor Points tidak valid (000, 099, 199, 299, atau 399).';
+            }
+        }
+
+        $needStatusPut = !empty($statusChanges) || ($vigorVal !== null && in_array($vigorVal, [0, 99, 199, 299, 399], true));
+
+        if ($needStatusPut && empty($errors)) {
             try {
-                // Get fresh raw status bytes
                 Cache::forget("pw.role.{$roleId}");
                 $roleData = $gameDb->getRoleData($roleId);
                 $rawStatus = $roleData['_raw_status'] ?? null;
@@ -317,8 +337,18 @@ class MemberController extends Controller
                 if (!$rawStatus) {
                     $errors[] = 'Gagal membaca raw status data.';
                 } else {
-                    $ok = $gameDb->updateRoleStatus($roleId, $rawStatus, $statusChanges);
-                    if (!$ok) $errors[] = 'PutRoleStatus gagal.';
+                    $patched = $gameDb->applyStatusFieldPatches($rawStatus, $statusChanges);
+                    if ($vigorVal !== null && in_array($vigorVal, [0, 99, 199, 299, 399], true)) {
+                        $vPatched = $gameDb->patchVigorInRawStatus($patched, $vigorVal);
+                        if ($vPatched === null) {
+                            $errors[] = 'Gagal menerapkan Vigor (property / max_ap).';
+                        } else {
+                            $patched = $vPatched;
+                        }
+                    }
+                    if (empty($errors) && !$gameDb->putRoleStatusData($roleId, $patched)) {
+                        $errors[] = 'PutRoleStatus gagal.';
+                    }
                 }
             } catch (\Throwable $e) {
                 $errors[] = 'Status error: ' . $e->getMessage();
@@ -343,5 +373,52 @@ class MemberController extends Controller
         } else {
             return back()->with('error', implode(' | ', $errors));
         }
+    }
+
+    public function saveRoleXml(Request $request, User $user, int $roleId): RedirectResponse
+    {
+        $request->validate([
+            'xml' => ['required', 'string', 'max:15000000'],
+        ], [
+            'xml.required' => 'Kolom XML wajib diisi.',
+        ]);
+
+        $characters = $user->gameCharacters();
+        $character = $characters->firstWhere('role_id', $roleId);
+        if (! $character) {
+            abort(404, 'Character not found.');
+        }
+
+        if ($user->isOnline()) {
+            $url = route('admin.members.character', [
+                'user' => $user,
+                'roleId' => $roleId,
+            ]) . '?view=xml';
+
+            return redirect($url)
+                ->with('error', 'Character harus offline untuk mengubah XML. Kick dulu dari server.');
+        }
+
+        $service = new PwAdminRoleXmlService();
+        [$ok, $err] = $service->saveRoleXmlWithError($roleId, (string) $request->input('xml', ''));
+        if (! $ok) {
+            $url = route('admin.members.character', [
+                'user' => $user,
+                'roleId' => $roleId,
+            ]) . '?view=xml';
+
+            return redirect($url)
+                ->with('error', 'Simpan XML gagal: ' . $err);
+        }
+
+        Cache::forget("pw.role.{$roleId}");
+
+        $url = route('admin.members.character', [
+            'user' => $user,
+            'roleId' => $roleId,
+        ]) . '?view=xml';
+
+        return redirect($url)
+            ->with('success', 'Role XML tersimpan (Tomcat: XmlRole.putRoleToDB).');
     }
 }

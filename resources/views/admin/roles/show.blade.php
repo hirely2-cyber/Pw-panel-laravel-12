@@ -39,6 +39,7 @@
                 </div>
             </div>
             <a href="{{ route('admin.roles.index') }}" class="pw-adm-btn" style="font-size:.78rem;">&larr; Kembali ke List</a>
+            <a href="{{ route('admin.roles.role-xml', $roleId) }}" class="pw-adm-btn" style="font-size:.78rem;" title="XmlRole (Tomcat)">&lt;/&gt; Role XML</a>
             @if($liveData)
             <a href="{{ route('admin.roles.edit', $roleId) }}" class="pw-adm-btn" style="font-size:.78rem;background:rgba(80,200,120,.12);border-color:rgba(80,200,120,.35);color:#50c878;">✏ Edit</a>
             @endif

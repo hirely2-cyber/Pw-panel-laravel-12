@@ -196,6 +196,10 @@ Route::get('/api/social-proof', function () {
     });
 })->middleware('throttle:30,1');
 
+// Dungeon Voting (public — no auth required)
+Route::get('/dungeon-vote', [\App\Http\Controllers\Website\DungeonVoteController::class, 'index'])->name('dungeon-vote');
+Route::post('/dungeon-vote/submit', [\App\Http\Controllers\Website\DungeonVoteController::class, 'vote'])->name('dungeon-vote.submit');
+
 // Pre-Launch Referral Ranking (public)
 Route::get('/referral-ranking', [HomeController::class, 'referralRanking'])->name('referral.ranking');
 
@@ -311,6 +315,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'webadmin'])->group(
     Route::get('members/{user}', [Admin\MemberController::class, 'show'])->name('members.show');
     Route::get('members/{user}/character/{roleId}', [Admin\MemberController::class, 'characterDetail'])->name('members.character');
     Route::post('members/{user}/character/{roleId}', [Admin\MemberController::class, 'saveCharacter'])->name('members.character.save');
+    Route::post('members/{user}/character/{roleId}/role-xml', [Admin\MemberController::class, 'saveRoleXml'])->name('members.character.xml.save');
     Route::post('members/{user}/reset-password', [Admin\MemberController::class, 'resetPassword'])->name('members.reset-password');
 
     // News management
@@ -322,6 +327,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'webadmin'])->group(
 
     // Vote management
     Route::resource('vote', Admin\VoteController::class)->except(['show']);
+
+    // Dungeon Vote Poll management
+    Route::get('dungeon-vote', [Admin\DungeonVoteController::class, 'index'])->name('dungeon-vote.index');
+    Route::get('dungeon-vote/create', [Admin\DungeonVoteController::class, 'create'])->name('dungeon-vote.create');
+    Route::post('dungeon-vote', [Admin\DungeonVoteController::class, 'store'])->name('dungeon-vote.store');
+    Route::patch('dungeon-vote/{poll}/activate', [Admin\DungeonVoteController::class, 'activate'])->name('dungeon-vote.activate');
+    Route::patch('dungeon-vote/{poll}/deactivate', [Admin\DungeonVoteController::class, 'deactivate'])->name('dungeon-vote.deactivate');
+    Route::patch('dungeon-vote/{poll}/reset', [Admin\DungeonVoteController::class, 'reset'])->name('dungeon-vote.reset');
+    Route::delete('dungeon-vote/{poll}', [Admin\DungeonVoteController::class, 'destroy'])->name('dungeon-vote.destroy');
 
     // Voucher management
     Route::resource('voucher', Admin\VoucherController::class);
@@ -365,6 +379,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'webadmin'])->group(
     // Character Roles — view + sync + edit
     Route::get('roles', [Admin\RoleController::class, 'index'])->name('roles.index');
     Route::post('roles/sync', [Admin\RoleController::class, 'sync'])->name('roles.sync');
+    Route::get('roles/{roleId}/role-xml', [Admin\RoleController::class, 'showRoleXml'])->name('roles.role-xml');
+    Route::post('roles/{roleId}/role-xml', [Admin\RoleController::class, 'saveRoleXml'])->name('roles.role-xml.save');
     Route::get('roles/{roleId}', [Admin\RoleController::class, 'show'])->name('roles.show');
     Route::get('roles/{roleId}/edit', [Admin\RoleController::class, 'edit'])->name('roles.edit');
     Route::post('roles/{roleId}/update', [Admin\RoleController::class, 'update'])->name('roles.update');
@@ -452,6 +468,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'webadmin'])->group(
         Route::post('events/{event}/distribute', [Admin\EventController::class, 'distribute'])->name('events.distribute');
         Route::post('events/{event}/distribute-referrals', [Admin\EventController::class, 'distributeReferrals'])->name('events.distribute-referrals');
         Route::post('events/{event}/distribute-register', [Admin\EventController::class, 'distributeRegisterRewards'])->name('events.distribute-register');
+
+        // Event Bonus Distribution (kirim Cubi ke semua user, sumber Event)
+        Route::get('event-bonus', [Admin\EventBonusController::class, 'index'])->name('event-bonus.index');
+        Route::post('event-bonus/distribute', [Admin\EventBonusController::class, 'distribute'])->name('event-bonus.distribute');
 
     });
 

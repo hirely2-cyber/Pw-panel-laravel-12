@@ -28,6 +28,25 @@ return [
         'path'        => env('PW_SERVER_PATH', '/home/pw_server155'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Alokasi character (role_id) per user id
+    |--------------------------------------------------------------------------
+    | true: char akun di-list dari role_id di [userId .. userId + character_slots - 1]
+    | (char pertama = id akun, berikutnya +1 — ketentuan server pvesea). Sumber: MySQL
+    | lalu GetUser(3002) hanya id dalam rentang itu. false: pola lama (account_id + cek gamedb).
+    */
+    'game_account' => [
+        'character_role_in_user_id_range' => ! in_array(
+            strtolower((string) env('PW_CHAR_RID_IN_USER_RANGE', '1')),
+            ['0', 'false', 'off', 'no'],
+            true
+        ),
+        'character_slots' => max(1, min(256, (int) env('PW_CHAR_SLOTS', 16))),
+        // Maksimal baris roles dicek per reconcile (setelah sync Tomcat & artisan fix)
+        'reconcile_from_gamedb_limit' => max(1, (int) env('PW_RECONCILE_ROLES_LIMIT', 20000)),
+    ],
+
     // pwAdmin (Tomcat) base URL for role sync
     'pwadmin_url' => env('PW_ADMIN_URL', 'http://localhost:8080/pwAdmin'),
 

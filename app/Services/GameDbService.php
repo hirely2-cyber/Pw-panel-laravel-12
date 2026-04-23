@@ -89,37 +89,56 @@ class GameDbService
     }
 
     /**
-     * Get real-time Cubi (cash) balance for an account from gamedbd.
-     * Returns array with cash, money, cash_add, cash_buy, cash_sell, cash_used.
-     * Returns null on failure. Caches for 60 seconds.
+     * GetUser (3002) full parse: role_ids + cash fields. Caches 60s.
+     * Source of truth for which role_ids belong to an account; MySQL `roles.account_id` can be wrong.
      */
-    public function getUserCash(int $userId, bool $useCache = true): ?array
+    public function getUserDataFromGamedb(int $userId, bool $useCache = true): ?array
     {
-        if (!$useCache) {
+        if (! $useCache) {
             try {
-                return $this->fetchUserCash($userId);
+                return $this->fetchGetUser($userId);
             } catch (\Throwable $e) {
-                Log::warning("GameDbService::getUserCash({$userId}) failed: " . $e->getMessage());
+                Log::warning("GameDbService::getUserDataFromGamedb({$userId}): " . $e->getMessage());
+
                 return null;
             }
         }
 
-        return Cache::remember("pw.usercash.{$userId}", 60, function () use ($userId) {
+        return Cache::remember("pw.getuser.{$userId}", 60, function () use ($userId) {
             try {
-                return $this->fetchUserCash($userId);
+                return $this->fetchGetUser($userId);
             } catch (\Throwable $e) {
-                Log::warning("GameDbService::getUserCash({$userId}) failed: " . $e->getMessage());
+                Log::warning("GameDbService::getUserDataFromGamedb({$userId}): " . $e->getMessage());
+
                 return null;
             }
         });
     }
 
     /**
+     * Get real-time Cubi (cash) balance for an account from gamedbd.
+     * Returns array with cash, money, cash_add, cash_buy, cash_sell, cash_used.
+     * Returns null on failure. Caches for 60 seconds (shared with getUserDataFromGamedb).
+     */
+    public function getUserCash(int $userId, bool $useCache = true): ?array
+    {
+        $d = $this->getUserDataFromGamedb($userId, $useCache);
+        if ($d === null) {
+            return null;
+        }
+
+        return array_intersect_key(
+            $d,
+            array_flip(['logicuid', 'cash', 'money', 'cash_add', 'cash_buy', 'cash_sell', 'cash_used'])
+        );
+    }
+
+    /**
      * Fetch User data from gamedbd via GetUser RPC (opcode 3002).
      * UserArg: id (int32), login_time (int32), login_ip (int32)
-     * UserRes: retcode (int32), User { logicuid, rolelist, cash, money, ... }
+     * User: logicuid, rolelist (GNET int32 vector, CUint n + n×int32), then cash & money fields.
      */
-    protected function fetchUserCash(int $userId): ?array
+    protected function fetchGetUser(int $userId): ?array
     {
         $this->writeBuf = '';
         $this->writeInt32(-1);       // local session id
@@ -147,29 +166,36 @@ class GameDbService
 
         if ($retCode !== 0) {
             Log::debug("GetUser retcode={$retCode} for userId={$userId}");
+
             return null;
         }
 
-        // Parse User struct (all int fields are 4-byte BE int32)
-        $logicuid = $this->readInt32();
-        $rolelist = $this->readInt32(); // internal role count/flags (plain int32, not vector)
+        try {
+            $logicuid = $this->readInt32();
+            $roleIds  = $this->readInt32Vector();
 
-        $cash      = $this->readInt32(); // Current Cubi balance (real-time)
-        $money     = $this->readInt32(); // Yuan/Silver
-        $cash_add  = $this->readInt32(); // Total Cubi ever topped up
-        $cash_buy  = $this->readInt32(); // Total Cubi bought (trade)
-        $cash_sell = $this->readInt32(); // Total Cubi sold (trade)
-        $cash_used = $this->readInt32(); // Total Cubi spent (shop)
+            $cash      = $this->readInt32();
+            $money     = $this->readInt32();
+            $cash_add  = $this->readInt32();
+            $cash_buy  = $this->readInt32();
+            $cash_sell = $this->readInt32();
+            $cash_used = $this->readInt32();
 
-        return [
-            'logicuid'  => $logicuid,
-            'cash'      => $cash,
-            'money'     => $money,
-            'cash_add'  => $cash_add,
-            'cash_buy'  => $cash_buy,
-            'cash_sell' => $cash_sell,
-            'cash_used' => $cash_used,
-        ];
+            return [
+                'logicuid'  => $logicuid,
+                'role_ids'  => $roleIds,
+                'cash'      => $cash,
+                'money'     => $money,
+                'cash_add'  => $cash_add,
+                'cash_buy'  => $cash_buy,
+                'cash_sell' => $cash_sell,
+                'cash_used' => $cash_used,
+            ];
+        } catch (\Throwable $e) {
+            Log::warning("GameDbService::fetchGetUser parse userId={$userId}: " . $e->getMessage());
+
+            return null;
+        }
     }
 
     // ═══════════════════════════════════════════════════
@@ -565,6 +591,23 @@ class GameDbService
     }
 
     /**
+     * GNET vector<int> — CUint count then N int32.
+     */
+    protected function readInt32Vector(): array
+    {
+        $n = $this->readCUint();
+        if ($n < 0 || $n > 256) {
+            throw new \RuntimeException("getUser: invalid int32vector length: {$n}");
+        }
+        $out = [];
+        for ($i = 0; $i < $n; $i++) {
+            $out[] = $this->readInt32();
+        }
+
+        return $out;
+    }
+
+    /**
      * Read PW CUint (compact unsigned integer).
      */
     protected function readCUint(): int
@@ -874,13 +917,9 @@ class GameDbService
     }
 
     /**
-     * Update character status fields by patching raw status binary.
-     *
-     * Fixed-offset fields in GRoleStatus:
-     *   cultivation(5), exp(9), sp(13), pos_x(29), pos_y(33),
-     *   pos_z(37), world_tag(41), reputation(57)
+     * Apply GRoleStatus top-level field patches (same layout as updateRoleStatus, without Put).
      */
-    public function updateRoleStatus(int $roleId, string $rawStatus, array $changes): bool
+    public function applyStatusFieldPatches(string $rawStatus, array $changes): string
     {
         $patched = $rawStatus;
 
@@ -909,12 +948,97 @@ class GameDbService
             $patched = substr_replace($patched, strrev(pack('i', (int) $changes['reputation'])), 57, 4);
         }
 
+        return $patched;
+    }
+
+    /**
+     * Set max AP (Vigor) inside extend_prop octets. pwAdmin allows 0, 99, 199, 299, 399 (maps to GRoleData.ep.max_ap).
+     * max_ap is the last int32 in the fixed part of property blob (LE) at byte offset 144.
+     */
+    public function patchVigorInRawStatus(string $rawStatus, int $vigor): ?string
+    {
+        if (!in_array($vigor, [0, 99, 199, 299, 399], true)) {
+            return null;
+        }
+
+        $this->readBuf = $rawStatus;
+        $this->readPos = 0;
+        if (strlen($rawStatus) < 80) {
+            return null;
+        }
+
+        $this->readByte();
+        for ($i = 0; $i < 5; $i++) {
+            $this->readInt32();
+        }
+        $this->readInt32();
+        $this->readInt32();
+        for ($i = 0; $i < 3; $i++) {
+            $this->readFloat();
+        }
+        for ($i = 0; $i < 5; $i++) {
+            $this->readInt32();
+        }
+        for ($i = 0; $i < 4; $i++) {
+            $this->readOctets();
+        }
+        for ($i = 0; $i < 7; $i++) {
+            $this->readInt32();
+        }
+        $this->readOctets();
+        $this->readInt16();
+        $this->readOctets();
+
+        $cuintPos = $this->readPos;
+        $l = $this->readCUint();
+        if ($l < 148) {
+            return null;
+        }
+        $propStart = $this->readPos;
+        if ($propStart + $l > strlen($this->readBuf)) {
+            return null;
+        }
+        $propData = substr($this->readBuf, $propStart, $l);
+        $le = pack('l', (int) $vigor);
+        if (strlen($le) !== 4) {
+            return null;
+        }
+        $patchedProp = substr_replace($propData, $le, 144, 4);
+        if (strlen($patchedProp) !== strlen($propData)) {
+            return null;
+        }
+
+        $cuintBlock = substr($this->readBuf, $cuintPos, $propStart - $cuintPos);
+        $tail = substr($this->readBuf, $propStart + $l);
+
+        return substr($this->readBuf, 0, $cuintPos) . $cuintBlock . $patchedProp . $tail;
+    }
+
+    /**
+     * Update character status fields by patching raw status binary.
+     *
+     * Fixed-offset fields in GRoleStatus:
+     *   cultivation(5), exp(9), sp(13), pos_x(29), pos_y(33),
+     *   pos_z(37), world_tag(41), reputation(57)
+     */
+    public function updateRoleStatus(int $roleId, string $rawStatus, array $changes): bool
+    {
+        $patched = $this->applyStatusFieldPatches($rawStatus, $changes);
+
         return $this->putRoleStatus($roleId, $patched);
     }
 
     /**
      * Send modified GRoleStatus to gamedbd via PutRoleStatus RPC (opcode 3014).
      */
+    /**
+     * @internal Used by MemberController when combining field patches + vigor patch
+     */
+    public function putRoleStatusData(int $roleId, string $statusData): bool
+    {
+        return $this->putRoleStatus($roleId, $statusData);
+    }
+
     protected function putRoleStatus(int $roleId, string $statusData): bool
     {
         $this->writeBuf = '';

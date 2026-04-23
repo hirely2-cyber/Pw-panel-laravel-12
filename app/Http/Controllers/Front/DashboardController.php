@@ -15,6 +15,7 @@ use App\Models\LaunchEvent;
 use App\Models\ReferralMilestone;
 use App\Models\ReferralPartner;
 use App\Models\ReferralReward;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -72,63 +73,92 @@ class DashboardController extends Controller
                 32 => 'Daimon Elder',
             ];
 
-            // Fetch detailed data from gamedbd via TCP
+            // Sumber role_id sama dengan User::gameCharacters: rentang [userId..userId+slot-1] (bukan account_id)
             $gameDb = new \App\Services\GameDbService();
-            $roleIds = DB::connection('mysql_game')
-                ->table('roles')
-                ->where('account_id', $user->ID)
-                ->pluck('role_id')
-                ->toArray();
+            $roleIds = $user->gameCharacters()->pluck('role_id')->all();
             $rolesData = $gameDb->getRolesData($roleIds);
+            $order = array_flip($roleIds);
+            $rolesRows = count($roleIds) > 0
+                ? DB::connection('mysql_game')->table('roles')->whereIn('role_id', $roleIds)->get()->keyBy('role_id')
+                : collect();
 
-            $characters = DB::connection('mysql_game')
-                ->table('roles')
-                ->where('account_id', $user->ID)
-                ->get()
-                ->map(function ($r) use ($classMap, $classRaceMap, $iconMap, $cultivationMap, $rolesData) {
+            $mapChar = static function (object $r, $rd) use ($classMap, $classRaceMap, $iconMap, $cultivationMap) {
+                $status = $rd['status'] ?? [];
+                $prop = $status['property'] ?? [];
+                $pocket = $rd['pocket'] ?? [];
+                $storehouse = $rd['storehouse'] ?? [];
+
+                return (object) [
+                    'role_id'       => $r->role_id,
+                    'name'          => $r->role_name,
+                    'level'         => $r->role_level,
+                    'class'         => $classMap[$r->role_occupation] ?? 'Unknown',
+                    'class_id'      => $r->role_occupation,
+                    'class_icon'    => ($iconMap[$r->role_occupation] ?? 'blademaster') . '.png',
+                    'race'          => $classRaceMap[$r->role_occupation] ?? 'Unknown',
+                    'gender'        => $r->role_gender == 0 ? 'Male' : 'Female',
+                    'spouse'        => $r->role_spouse > 0 ? $r->role_spouse : null,
+                    'faction_name'  => ($r->faction_name && trim($r->faction_name) !== '') ? $r->faction_name : null,
+                    'faction_level' => $r->faction_level,
+                    'pvp_kills'     => $r->pvp_kills,
+                    'pvp_deads'     => $r->pvp_deads,
+                    'has_extended'  => $rd !== null,
+                    'reputation'    => $status['reputation'] ?? null,
+                    'sp'            => $status['sp'] ?? null,
+                    'cultivation'   => isset($status['cultivation'])
+                        ? ($cultivationMap[$status['cultivation']] ?? 'Lv.' . $status['cultivation'])
+                        : null,
+                    'hp'            => $prop['max_hp'] ?? null,
+                    'mp'            => $prop['max_mp'] ?? null,
+                    'vigor'         => $prop['max_ap'] ?? null,
+                    'pocket_coins'  => $pocket['money'] ?? null,
+                    'store_coins'   => $storehouse['money'] ?? null,
+                    'vitality'      => $prop['vitality'] ?? null,
+                    'energy'        => $prop['energy'] ?? null,
+                    'strength'      => $prop['strength'] ?? null,
+                    'agility'       => $prop['agility'] ?? null,
+                    'p_def'         => $prop['defense'] ?? null,
+                    'p_atk_min'     => $prop['damage_low'] ?? null,
+                    'p_atk_max'     => $prop['damage_high'] ?? null,
+                    'm_atk_min'     => $prop['damage_magic_low'] ?? null,
+                    'm_atk_max'     => $prop['damage_magic_high'] ?? null,
+                ];
+            };
+
+            $characters = collect($roleIds)
+                ->map(function (int $rid) use ($rolesRows, $rolesData, $mapChar) {
+                    $r = $rolesRows->get($rid);
+                    if (! $r) {
+                        $rd = $rolesData[$rid] ?? null;
+                        if (! $rd || empty($rd['base'])) {
+                            return null;
+                        }
+                        $b = $rd['base'];
+                        $s = $rd['status'] ?? [];
+                        $r = (object) [
+                            'role_id'         => $rid,
+                            'role_name'       => $b['name'] ?? '?',
+                            'role_level'      => (int) ($s['level'] ?? 0),
+                            'role_occupation' => (int) ($b['cls'] ?? 0),
+                            'role_gender'     => (int) ($b['gender'] ?? 0),
+                            'role_spouse'     => 0,
+                            'faction_name'    => null,
+                            'faction_level'   => 0,
+                            'pvp_kills'      => 0,
+                            'pvp_deads'      => 0,
+                        ];
+                    }
                     $rd = $rolesData[$r->role_id] ?? null;
-                    $status = $rd['status'] ?? [];
-                    $prop = $status['property'] ?? [];
-                    $pocket = $rd['pocket'] ?? [];
-                    $storehouse = $rd['storehouse'] ?? [];
 
-                    return (object) [
-                        'role_id'       => $r->role_id,
-                        'name'          => $r->role_name,
-                        'level'         => $r->role_level,
-                        'class'         => $classMap[$r->role_occupation] ?? 'Unknown',
-                        'class_id'      => $r->role_occupation,
-                        'class_icon'    => ($iconMap[$r->role_occupation] ?? 'blademaster') . '.png',
-                        'race'          => $classRaceMap[$r->role_occupation] ?? 'Unknown',
-                        'gender'        => $r->role_gender == 0 ? 'Male' : 'Female',
-                        'spouse'        => $r->role_spouse > 0 ? $r->role_spouse : null,
-                        'faction_name'  => ($r->faction_name && trim($r->faction_name) !== '') ? $r->faction_name : null,
-                        'faction_level' => $r->faction_level,
-                        'pvp_kills'     => $r->pvp_kills,
-                        'pvp_deads'     => $r->pvp_deads,
-                        // ── Extended data from gamedbd ──
-                        'has_extended'  => $rd !== null,
-                        'reputation'    => $status['reputation'] ?? null,
-                        'sp'            => $status['sp'] ?? null,
-                        'cultivation'   => isset($status['cultivation'])
-                            ? ($cultivationMap[$status['cultivation']] ?? 'Lv.' . $status['cultivation'])
-                            : null,
-                        'hp'            => $prop['max_hp'] ?? null,
-                        'mp'            => $prop['max_mp'] ?? null,
-                        'vigor'         => $prop['max_ap'] ?? null,
-                        'pocket_coins'  => $pocket['money'] ?? null,
-                        'store_coins'   => $storehouse['money'] ?? null,
-                        'vitality'      => $prop['vitality'] ?? null,
-                        'energy'        => $prop['energy'] ?? null,
-                        'strength'      => $prop['strength'] ?? null,
-                        'agility'       => $prop['agility'] ?? null,
-                        'p_def'         => $prop['defense'] ?? null,
-                        'p_atk_min'     => $prop['damage_low'] ?? null,
-                        'p_atk_max'     => $prop['damage_high'] ?? null,
-                        'm_atk_min'     => $prop['damage_magic_low'] ?? null,
-                        'm_atk_max'     => $prop['damage_magic_high'] ?? null,
-                    ];
-                });
+                    return $mapChar($r, $rd);
+                })
+                ->filter()
+                ->values();
+            if (count($order) > 0) {
+                $characters = $characters
+                    ->sortBy(fn ($c) => $order[$c->role_id] ?? 999)
+                    ->values();
+            }
 
             // Cubi Coins (real-time from gamedbd via GetUser RPC)
             // cash_add = total ever topped up, cash_used = total spent, cash_buy/sell = trade
@@ -167,38 +197,80 @@ class DashboardController extends Controller
                 30=>'Daimon Baresark', 31=>'Daimon Saint', 32=>'Daimon Elder',
             ];
 
-            // Batch: max level per referred user (1 MySQL query)
+            // Max level per referred: rentang char [referredId .. referredId+slot-1] bila mode slot, else account_id
             $maxLevelMap = [];
             if (! empty($referredIds)) {
                 try {
-                    DB::connection('mysql_game')
-                        ->table('roles')
-                        ->whereIn('account_id', $referredIds)
-                        ->selectRaw('account_id, MAX(role_level) as max_level')
-                        ->groupBy('account_id')
-                        ->get()
-                        ->each(fn ($r) => $maxLevelMap[$r->account_id] = (int) $r->max_level);
+                    $refSlotBounds = User::gameCharacterRoleIdSlotBoundsForUserId((int) $referredIds[0]);
+                    if ($refSlotBounds !== null) {
+                        $slotsN = (int) $refSlotBounds['slots'];
+                        foreach ($referredIds as $refId) {
+                            $refId = (int) $refId;
+                            $m = DB::connection('mysql_game')
+                                ->table('roles')
+                                ->whereBetween('role_id', [$refId, $refId + $slotsN - 1])
+                                ->max('role_level');
+                            if ($m !== null) {
+                                $maxLevelMap[$refId] = (int) $m;
+                            }
+                        }
+                    } else {
+                        DB::connection('mysql_game')
+                            ->table('roles')
+                            ->whereIn('account_id', $referredIds)
+                            ->selectRaw('account_id, MAX(role_level) as max_level')
+                            ->groupBy('account_id')
+                            ->get()
+                            ->each(fn ($r) => $maxLevelMap[$r->account_id] = (int) $r->max_level);
+                    }
                 } catch (\Throwable $e) {}
             }
 
-            // Batch: max cultivation per referred user (gamedbd, only if req_cult > 0)
+            // Max cultivation per referred (gamedbd) — bila slot, agregasi per rentang
             $maxCultMap = [];
             if ($reqCult > 0 && ! empty($referredIds)) {
                 try {
-                    $roleRows = DB::connection('mysql_game')
-                        ->table('roles')
-                        ->whereIn('account_id', $referredIds)
-                        ->get(['role_id', 'account_id']);
-
                     $roleIdToAccount = [];
-                    $allRoleIds      = [];
-                    foreach ($roleRows as $row) {
-                        $roleIdToAccount[$row->role_id] = $row->account_id;
-                        $allRoleIds[] = $row->role_id;
+                    $allRoleIds = [];
+                    $cultRefSlot = User::gameCharacterRoleIdSlotBoundsForUserId((int) $referredIds[0]);
+                    if ($cultRefSlot !== null) {
+                        $slotsN = (int) $cultRefSlot['slots'];
+                        $q = DB::connection('mysql_game')->table('roles');
+                        $q->where(function ($w) use ($referredIds, $slotsN) {
+                            foreach ($referredIds as $id) {
+                                $id = (int) $id;
+                                $w->orWhereBetween('role_id', [$id, $id + $slotsN - 1]);
+                            }
+                        });
+                        $roleRows = $q->get(['role_id']);
+                        foreach ($roleRows as $row) {
+                            $roleId = (int) $row->role_id;
+                            $accId = null;
+                            foreach ($referredIds as $refId) {
+                                $refId = (int) $refId;
+                                if ($roleId >= $refId && $roleId <= $refId + $slotsN - 1) {
+                                    $accId = $refId;
+                                    break;
+                                }
+                            }
+                            if ($accId) {
+                                $roleIdToAccount[$roleId] = $accId;
+                                $allRoleIds[] = $roleId;
+                            }
+                        }
+                    } else {
+                        $roleRows = DB::connection('mysql_game')
+                            ->table('roles')
+                            ->whereIn('account_id', $referredIds)
+                            ->get(['role_id', 'account_id']);
+                        foreach ($roleRows as $row) {
+                            $roleIdToAccount[$row->role_id] = $row->account_id;
+                            $allRoleIds[] = $row->role_id;
+                        }
                     }
 
                     if (! empty($allRoleIds)) {
-                        $gameDb2   = new \App\Services\GameDbService();
+                        $gameDb2 = new \App\Services\GameDbService();
                         $rolesData2 = $gameDb2->getRolesData($allRoleIds);
                         foreach ($rolesData2 as $roleId => $rd) {
                             $accId = $roleIdToAccount[$roleId] ?? null;
@@ -274,15 +346,31 @@ class DashboardController extends Controller
 
             // Count qualified referrals (referred users with character at req level)
             $referredIds = $user->referrals()->pluck('ID')->toArray();
-            if (!empty($referredIds)) {
+            if (! empty($referredIds)) {
                 try {
-                    $preLaunchQualified = DB::connection('mysql_game')
-                        ->table('roles')
-                        ->whereIn('account_id', $referredIds)
-                        ->selectRaw('account_id, MAX(role_level) as max_level')
-                        ->groupBy('account_id')
-                        ->havingRaw('MAX(role_level) >= ?', [$reqLevel])
-                        ->count();
+                    $plBounds = User::gameCharacterRoleIdSlotBoundsForUserId((int) $referredIds[0]);
+                    if ($plBounds !== null) {
+                        $plSlotsN = (int) $plBounds['slots'];
+                        $preLaunchQualified = 0;
+                        foreach ($referredIds as $plRef) {
+                            $plRef = (int) $plRef;
+                            $m = (int) (DB::connection('mysql_game')
+                                ->table('roles')
+                                ->whereBetween('role_id', [$plRef, $plRef + $plSlotsN - 1])
+                                ->max('role_level') ?? 0);
+                            if ($m >= $reqLevel) {
+                                $preLaunchQualified++;
+                            }
+                        }
+                    } else {
+                        $preLaunchQualified = DB::connection('mysql_game')
+                            ->table('roles')
+                            ->whereIn('account_id', $referredIds)
+                            ->selectRaw('account_id, MAX(role_level) as max_level')
+                            ->groupBy('account_id')
+                            ->havingRaw('MAX(role_level) >= ?', [$reqLevel])
+                            ->count();
+                    }
                 } catch (\Throwable $e) {}
             }
 
@@ -440,9 +528,25 @@ class DashboardController extends Controller
                 }
             }
 
-            // ── Check character level requirement (MySQL) ──
+            // ── Check character level (MySQL): rentang slot [userId..max] atau account_id
             try {
-                if ($minCharLevel > 1) {
+                $rb = User::gameCharacterRoleIdSlotBoundsForUserId((int) $referred->ID);
+                if ($rb !== null) {
+                    $rMin = (int) $rb['min'];
+                    $rMax = (int) $rb['max'];
+                    if ($minCharLevel > 1) {
+                        $hasQualified = DB::connection('mysql_game')
+                            ->table('roles')
+                            ->whereBetween('role_id', [$rMin, $rMax])
+                            ->where('role_level', '>=', $minCharLevel)
+                            ->exists();
+                    } else {
+                        $hasQualified = DB::connection('mysql_game')
+                            ->table('roles')
+                            ->whereBetween('role_id', [$rMin, $rMax])
+                            ->exists();
+                    }
+                } elseif ($minCharLevel > 1) {
                     $hasQualified = DB::connection('mysql_game')
                         ->table('roles')
                         ->where('account_id', $referred->ID)
@@ -465,11 +569,20 @@ class DashboardController extends Controller
             // ── Check cultivation requirement (gamedbd) ──
             if ($minCultivation > 0) {
                 try {
-                    $refRoleIds = DB::connection('mysql_game')
-                        ->table('roles')
-                        ->where('account_id', $referred->ID)
-                        ->pluck('role_id')
-                        ->toArray();
+                    $rBounds = User::gameCharacterRoleIdSlotBoundsForUserId((int) $referred->ID);
+                    if ($rBounds !== null) {
+                        $refRoleIds = DB::connection('mysql_game')
+                            ->table('roles')
+                            ->whereBetween('role_id', [(int) $rBounds['min'], (int) $rBounds['max']])
+                            ->pluck('role_id')
+                            ->toArray();
+                    } else {
+                        $refRoleIds = DB::connection('mysql_game')
+                            ->table('roles')
+                            ->where('account_id', $referred->ID)
+                            ->pluck('role_id')
+                            ->toArray();
+                    }
 
                     if (empty($refRoleIds)) {
                         continue;

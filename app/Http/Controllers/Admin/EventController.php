@@ -265,8 +265,8 @@ class EventController extends Controller
             return back()->with('error', 'Fitur ini hanya untuk event Pre-Launch.');
         }
 
-        if ($event->status !== 'ended') {
-            return back()->with('error', 'Event harus dalam status "ended" untuk distribute.');
+        if (! in_array($event->status, ['active', 'ended', 'distributed'])) {
+            return back()->with('error', 'Event harus dalam status "active" atau "ended" untuk distribute.');
         }
 
         $tiers = $event->referral_tiers ?? [];
@@ -376,8 +376,8 @@ class EventController extends Controller
             return back()->with('error', 'Fitur ini hanya untuk event Pre-Launch.');
         }
 
-        if (! in_array($event->status, ['ended', 'distributed'])) {
-            return back()->with('error', 'Event harus dalam status "ended" untuk distribute hadiah register.');
+        if (! in_array($event->status, ['active', 'ended', 'distributed'])) {
+            return back()->with('error', 'Event harus dalam status "active" atau "ended" untuk distribute hadiah register.');
         }
 
         $rewards = $event->register_rewards ?? [];
