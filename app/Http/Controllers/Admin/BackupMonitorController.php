@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\File;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BackupMonitorController extends Controller
 {
@@ -49,7 +49,7 @@ class BackupMonitorController extends Controller
         return view('admin.backup-monitor', compact('files', 'serverPath'));
     }
 
-    public function download(Request $request): Response|RedirectResponse
+    public function download(Request $request): BinaryFileResponse|RedirectResponse
     {
         $request->validate([
             'file' => ['required', 'string', 'max:255'],
