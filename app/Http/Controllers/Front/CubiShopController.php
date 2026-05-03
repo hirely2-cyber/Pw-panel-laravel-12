@@ -83,8 +83,17 @@ class CubiShopController extends Controller
             ->first();
 
         if ($existing) {
+            // QRIS merchant can rotate in PayHook settings. Reuse of old pending invoice
+            // may keep showing stale QR, so force-refresh by expiring old QRIS invoice.
+            if ($channelType === 'qris' || ($existing->channel_type ?? '') === 'qris') {
+                $existing->update([
+                    'status'     => Invoice::STATUS_EXPIRED,
+                    'expires_at' => now(),
+                ]);
+            } else {
             return redirect()->route('donate.invoice.show', $existing->invoice_number)
                 ->with('warning', 'Kamu masih memiliki invoice yang belum dibayar. Selesaikan pembayaran terlebih dahulu.');
+            }
         }
 
         // Calculate cubi from amount

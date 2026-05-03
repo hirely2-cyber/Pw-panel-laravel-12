@@ -362,7 +362,6 @@
                         <th style="text-align:left;padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.72rem;color:var(--pw-text-muted);">File Asal</th>
                         <th style="text-align:right;padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.72rem;color:var(--pw-text-muted);">Size</th>
                         <th style="text-align:left;padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.72rem;color:var(--pw-text-muted);">Status</th>
-                        <th style="text-align:left;padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.72rem;color:var(--pw-text-muted);">Output</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -381,11 +380,10 @@
                                     <span style="padding:.15rem .45rem;border-radius:999px;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.35);">FAILED</span>
                                 @endif
                             </td>
-                            <td style="padding:.55rem;border-bottom:1px solid var(--pw-border);font-size:.74rem;color:var(--pw-text-muted);max-width:320px;word-break:break-word;">{{ $row->script_output ?: '-' }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" style="padding:1rem;border-bottom:1px solid var(--pw-border);font-size:.82rem;color:var(--pw-text-muted);text-align:center;">Belum ada riwayat update DATAFILE.</td>
+                            <td colspan="7" style="padding:1rem;border-bottom:1px solid var(--pw-border);font-size:.82rem;color:var(--pw-text-muted);text-align:center;">Belum ada riwayat update DATAFILE.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -460,13 +458,12 @@
             if (xhr.status >= 200 && xhr.status < 300 && payload && payload.ok) {
                 fill.style.width = '100%';
                 text.textContent = '100%';
-                showMsg(true, payload.message || 'Upload berhasil.');
+                showMsg(true, 'Sukses');
                 setTimeout(() => window.location.reload(), 900);
                 return;
             }
 
-            const err = payload?.message || payload?.error || 'Upload gagal. Silakan cek log server.';
-            showMsg(false, err);
+            showMsg(false, 'Gagal');
         };
 
         xhr.onerror = function () {
@@ -542,13 +539,12 @@
             if (xhr.status >= 200 && xhr.status < 300 && payload && payload.ok) {
                 fill.style.width = '100%';
                 text.textContent = '100%';
-                showMsg(true, payload.message || 'Upload berhasil.');
+                showMsg(true, 'Sukses');
                 setTimeout(() => window.location.reload(), 900);
                 return;
             }
 
-            const err = payload?.message || payload?.error || 'Upload gagal. Silakan cek log server.';
-            showMsg(false, err);
+            showMsg(false, 'Gagal');
         };
 
         xhr.onerror = function () {
