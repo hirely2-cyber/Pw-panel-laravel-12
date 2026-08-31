@@ -12,6 +12,10 @@ Artisan::command('inspire', function () {
 // Sync ranking dari game DB setiap 10 menit
 Schedule::command('pw:sync-ranking')->everyTenMinutes();
 
+// Sync roles (level/cultivation/exp) dari gamedbd ke MySQL setiap 10 menit
+// supaya data karakter di panel & website tidak basi (cron flush cache otomatis).
+Schedule::command('pw:sync-roles')->everyTenMinutes()->withoutOverlapping(15);
+
 // Sync event progress setiap 3 menit
 Schedule::command('pw:sync-event')->everyThreeMinutes();
 

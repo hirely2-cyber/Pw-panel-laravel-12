@@ -144,51 +144,116 @@ class RoleController extends Controller
     public function update(Request $request, int $roleId)
     {
         $validated = $request->validate([
-            'world'         => 'required|integer|min:0',
-            'coordinateX'   => 'required|numeric',
-            'coordinateZ'   => 'required|numeric',
-            'coordinateY'   => 'required|numeric',
-            'reputation'    => 'required|integer|min:0|max:2147483647',
-            'exp'           => 'required|integer|min:0|max:2147483647',
-            'sp'            => 'required|integer|min:0|max:2147483647',
-            'cultivation'   => 'required|integer|in:0,1,2,3,4,5,6,7,8,20,21,22,30,31,32',
-            'vigor'         => 'required|integer|in:0,99,199,299,399',
-            'pocketcoins'   => 'required|integer|min:0|max:200000000',
+            'world' => 'required|integer|min:0',
+            'coordinateX' => 'required|numeric',
+            'coordinateZ' => 'required|numeric',
+            'coordinateY' => 'required|numeric',
+            'reputation' => 'required|integer|min:0|max:2147483647',
+            'exp' => 'required|integer|min:0|max:2147483647',
+            'sp' => 'required|integer|min:0|max:2147483647',
+            'cultivation' => 'required|integer|in:0,1,2,3,4,5,6,7,8,20,21,22,30,31,32',
+            'vigor' => 'required|integer|in:0,99,199,299,399',
+            'pocketcoins' => 'required|integer|min:0|max:200000000',
             'storehousecoins' => 'required|integer|min:0|max:200000000',
         ]);
 
-        $tomcatUrl = config('pw-api.pwadmin_url', 'http://127.0.0.1:8080/pwAdmin/');
-        $saveUrl = rtrim($tomcatUrl, '/') . "/index.jsp?page=role&show=details&ident={$roleId}&type=id&process=save";
-
-        $session = $this->getTomcatSession();
-
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL            => $saveUrl,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 30,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => http_build_query($validated),
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTPHEADER     => ['Accept: text/html'],
-            CURLOPT_COOKIE         => 'JSESSIONID=' . ($session ?? ''),
-        ]);
-
-        $response  = curl_exec($ch);
-        $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-
-        if ($curlError) {
-            return back()->withErrors(['error' => "Koneksi ke Tomcat gagal: {$curlError}"])->withInput();
+        // Fetch current data to determine what actually changed
+        $gameDb = new GameDbService();
+        Cache::forget("pw.role.{$roleId}");
+        $before = $gameDb->getRoleData($roleId);
+        if (! $before) {
+            return back()->withErrors(['error' => 'Gagal mengambil data karakter dari game server.'])->withInput();
         }
 
-        // Flush cache so show() gets fresh data
-        \Illuminate\Support\Facades\Cache::forget("pw.role.{$roleId}");
+        $beforeStatus = $before['status'] ?? [];
+        $beforeProp = $beforeStatus['property'] ?? [];
+        $beforePocket = (int) ($before['pocket']['money'] ?? 0);
+        $beforeStore = (int) ($before['storehouse']['money'] ?? 0);
 
-        $failed = stripos($response ?? '', 'error') !== false && $httpCode !== 200;
-        if ($failed) {
-            return back()->withErrors(['error' => "Tomcat menolak save. HTTP {$httpCode}."])->withInput();
+        // Build payload with only changed fields
+        $isFloatChanged = static fn (float $a, float $b): bool => abs($a - $b) > 0.0001;
+        $payload = [];
+
+        if ((int) $validated['world'] !== (int) ($beforeStatus['world_tag'] ?? 0)) {
+            $payload['world'] = (int) $validated['world'];
+        }
+        if ($isFloatChanged((float) $validated['coordinateX'], (float) ($beforeStatus['pos_x'] ?? 0))) {
+            $payload['coordinateX'] = (float) $validated['coordinateX'];
+        }
+        if ($isFloatChanged((float) $validated['coordinateZ'], (float) ($beforeStatus['pos_z'] ?? 0))) {
+            $payload['coordinateZ'] = (float) $validated['coordinateZ'];
+        }
+        if ($isFloatChanged((float) $validated['coordinateY'], (float) ($beforeStatus['pos_y'] ?? 0))) {
+            $payload['coordinateY'] = (float) $validated['coordinateY'];
+        }
+        if ((int) $validated['reputation'] !== (int) ($beforeStatus['reputation'] ?? 0)) {
+            $payload['reputation'] = (int) $validated['reputation'];
+        }
+        if ((int) $validated['exp'] !== (int) ($beforeStatus['exp'] ?? 0)) {
+            $payload['exp'] = (int) $validated['exp'];
+        }
+        if ((int) $validated['sp'] !== (int) ($beforeStatus['sp'] ?? 0)) {
+            $payload['sp'] = (int) $validated['sp'];
+        }
+        if ((int) $validated['cultivation'] !== (int) ($beforeStatus['cultivation'] ?? 0)) {
+            $payload['cultivation'] = (int) $validated['cultivation'];
+        }
+        if ((int) $validated['vigor'] !== (int) ($beforeProp['max_ap'] ?? 0)) {
+            $payload['vigor'] = (int) $validated['vigor'];
+        }
+        if ((int) $validated['pocketcoins'] !== $beforePocket) {
+            $payload['pocketcoins'] = (int) $validated['pocketcoins'];
+        }
+        if ((int) $validated['storehousecoins'] !== $beforeStore) {
+            $payload['storehousecoins'] = (int) $validated['storehousecoins'];
+        }
+
+        if (empty($payload)) {
+            return back()->with('success', 'Tidak ada perubahan data untuk disimpan.');
+        }
+
+        $session = $this->getTomcatSession();
+        if (! $session) {
+            return back()->withErrors(['error' => 'Gagal mengambil sesi Tomcat (login).'])->withInput();
+        }
+
+        // Try to save via Tomcat - may not support coordinates/exp, we'll handle separately
+        [$ok, $saveError] = $this->saveRoleViaTomcat($roleId, $payload);
+
+        if (! $ok) {
+            return back()->with('error', $saveError ?? 'Tomcat menolak save character.');
+        }
+
+        $gameDb = new GameDbService();
+        Cache::forget("pw.role.{$roleId}");
+        $after = $gameDb->getRoleData($roleId);
+        if (! $after) {
+            return back()->withErrors(['error' => 'Save terkirim, tapi verifikasi gagal membaca data terbaru.'])->withInput();
+        }
+
+        $status = $after['status'] ?? [];
+        $prop = $status['property'] ?? [];
+        $pocket = (int) ($after['pocket']['money'] ?? 0);
+        $store = (int) ($after['storehouse']['money'] ?? 0);
+
+        // Verify that changes were applied (only check fields that were sent)
+        $isFloatChanged = static fn (float $a, float $b): bool => abs($a - $b) > 0.0001;
+        $notApplied = [];
+
+        if (isset($payload['world']) && (int) $payload['world'] !== (int) ($status['world_tag'] ?? 0)) $notApplied[] = 'world';
+        if (isset($payload['coordinateX']) && $isFloatChanged((float) $payload['coordinateX'], (float) ($status['pos_x'] ?? 0))) $notApplied[] = 'coordinateX';
+        if (isset($payload['coordinateZ']) && $isFloatChanged((float) $payload['coordinateZ'], (float) ($status['pos_z'] ?? 0))) $notApplied[] = 'coordinateZ';
+        if (isset($payload['coordinateY']) && $isFloatChanged((float) $payload['coordinateY'], (float) ($status['pos_y'] ?? 0))) $notApplied[] = 'coordinateY';
+        if (isset($payload['reputation']) && (int) $payload['reputation'] !== (int) ($status['reputation'] ?? 0)) $notApplied[] = 'reputation';
+        if (isset($payload['exp']) && (int) $payload['exp'] !== (int) ($status['exp'] ?? 0)) $notApplied[] = 'exp';
+        if (isset($payload['sp']) && (int) $payload['sp'] !== (int) ($status['sp'] ?? 0)) $notApplied[] = 'sp';
+        if (isset($payload['cultivation']) && (int) $payload['cultivation'] !== (int) ($status['cultivation'] ?? 0)) $notApplied[] = 'cultivation';
+        if (isset($payload['vigor']) && (int) $payload['vigor'] !== (int) ($prop['max_ap'] ?? 0)) $notApplied[] = 'vigor';
+        if (isset($payload['pocketcoins']) && (int) $payload['pocketcoins'] !== $pocket) $notApplied[] = 'pocketcoins';
+        if (isset($payload['storehousecoins']) && (int) $payload['storehousecoins'] !== $store) $notApplied[] = 'storehousecoins';
+
+        if (! empty($notApplied)) {
+            return back()->withErrors(['error' => 'Save dikirim, tapi data belum berubah pada: ' . implode(', ', $notApplied) . '.'])->withInput();
         }
 
         return redirect()->route('admin.roles.show', $roleId)
@@ -386,6 +451,104 @@ class RoleController extends Controller
         return redirect()
             ->route('admin.roles.role-xml', $roleId)
             ->with('success', 'Role XML tersimpan (Tomcat: XmlRole.putRoleToDB).');
+    }
+
+    private function saveRoleViaTomcat(int $roleId, array $payload): array
+    {
+        // Use custom JSP API endpoint with token (no session login required)
+        $tomcatUrl = rtrim((string) config('pw-api.pwadmin_url', 'http://127.0.0.1:8080/pwAdmin/'), '/');
+        $token = (string) config('pw-api.pwadmin_api_token', 'pw_panel_sync_2026');
+        $saveUrl = $tomcatUrl . '/api_role_save.jsp';
+
+        $postData = array_merge(['token' => $token, 'ident' => $roleId], $payload);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $saveUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query($postData),
+        ]);
+
+        $body = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError !== '') {
+            return [false, 'Koneksi ke pwAdmin gagal: ' . $curlError];
+        }
+
+        $body = is_string($body) ? trim($body) : '';
+        $data = json_decode($body, true);
+
+        if (! is_array($data)) {
+            return [false, "Response pwAdmin tidak valid (HTTP {$httpCode})."];
+        }
+
+        if (empty($data['ok'])) {
+            $msg = $data['message'] ?? 'pwAdmin menolak save.';
+            return [false, 'pwAdmin error: ' . $msg];
+        }
+
+        return [true, null];
+    }
+
+    private function getTomcatSession(): ?string
+    {
+        $tomcatBase = rtrim((string) config('pw-api.pwadmin_url', 'http://127.0.0.1:8080/pwAdmin/'), '/');
+        $username = (string) config('pw-api.pwadmin_user', 'admin');
+        $password = (string) config('pw-api.pwadmin_pass', '');
+
+        if ($username === '') {
+            return null;
+        }
+
+        // PWAdmin login endpoint: POST to index.jsp?page=login with user, key, captcha (6+7=13)
+        $loginUrl = $tomcatBase . '/index.jsp?page=login';
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $loginUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 20,
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query([
+                'user' => $username,
+                'key' => $password,
+                'captcha' => '13',  // Answer to "What is 6 + 7?"
+            ]),
+            CURLOPT_HEADER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (PWPanel/2.0)',
+        ]);
+
+        $response = curl_exec($ch);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if (! is_string($response) || $response === '') {
+            if ($curlError !== '') {
+                Log::warning('RoleController::getTomcatSession curl error: ' . $curlError);
+            }
+
+            return null;
+        }
+
+        // Extract JSESSIONID from Set-Cookie header
+        if (preg_match('/Set-Cookie:\s*JSESSIONID=([^;\s]+)/i', $response, $m) === 1) {
+            return $m[1];
+        }
+
+        // Fallback: check if it's in the response body (shouldn't be, but just in case)
+        if (preg_match('/JSESSIONID=([^;\s]+)/i', $response, $m) === 1) {
+            return $m[1];
+        }
+
+        return null;
     }
 
     private function isAccountGameOnline(int $userId): bool

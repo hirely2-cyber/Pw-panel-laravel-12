@@ -38,17 +38,17 @@
                 <td style="color:var(--pw-text-muted);padding:.3rem 0;">Cubi Gold</td>
                 <td style="font-weight:600;color:#4fad84;">
                     @if($cubiData)
-                        {{ number_format(($cubiData['cash_add'] + $cubiData['cash_buy'] - $cubiData['cash_used'] - $cubiData['cash_sell']) / 100) }}
+                        {{ number_format(($cubiData['cash'] ?? 0) / 100, 2) }}
                     @else
                         <span style="color:var(--pw-text-muted);font-weight:400;">Offline</span>
                     @endif
                 </td>
             </tr>
             @if($cubiData)
-            <tr><td style="color:var(--pw-text-muted);padding:.3rem 0;font-size:.75rem;">- Total Top-up</td><td style="font-size:.75rem;">{{ number_format($cubiData['cash_add'] / 100) }}</td></tr>
-            <tr><td style="color:var(--pw-text-muted);padding:.3rem 0;font-size:.75rem;">- Digunakan</td><td style="font-size:.75rem;">{{ number_format($cubiData['cash_used'] / 100) }}</td></tr>
-            <tr><td style="color:var(--pw-text-muted);padding:.3rem 0;font-size:.75rem;">- Beli (Trade)</td><td style="font-size:.75rem;">{{ number_format($cubiData['cash_buy'] / 100) }}</td></tr>
-            <tr><td style="color:var(--pw-text-muted);padding:.3rem 0;font-size:.75rem;">- Jual (Trade)</td><td style="font-size:.75rem;">{{ number_format($cubiData['cash_sell'] / 100) }}</td></tr>
+            <tr><td style="color:var(--pw-text-muted);padding:.3rem 0;font-size:.75rem;">- Total Top-up</td><td style="font-size:.75rem;">{{ number_format($cubiData['cash_add'] / 100, 2) }}</td></tr>
+            <tr><td style="color:var(--pw-text-muted);padding:.3rem 0;font-size:.75rem;">- Digunakan</td><td style="font-size:.75rem;">{{ number_format($cubiData['cash_used'] / 100, 2) }}</td></tr>
+            <tr><td style="color:var(--pw-text-muted);padding:.3rem 0;font-size:.75rem;">- Beli (Trade)</td><td style="font-size:.75rem;">{{ number_format($cubiData['cash_buy'] / 100, 2) }}</td></tr>
+            <tr><td style="color:var(--pw-text-muted);padding:.3rem 0;font-size:.75rem;">- Jual (Trade)</td><td style="font-size:.75rem;">{{ number_format($cubiData['cash_sell'] / 100, 2) }}</td></tr>
             @endif
             <tr><td style="color:var(--pw-text-muted);padding:.3rem 0;">No HP</td><td>{{ $user->mobilenumber ?: '-' }}</td></tr>
             <tr>

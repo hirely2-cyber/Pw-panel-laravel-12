@@ -12,6 +12,8 @@ use Illuminate\View\View;
 
 class ServerControlController extends Controller
 {
+    private ?array $remoteSnapshot = null;
+
     // -------------------------------------------------------
     // Helpers
     // -------------------------------------------------------
@@ -27,15 +29,77 @@ class ServerControlController extends Controller
 
     private function sh(string $cmd): array
     {
-        $output = [];
-        $rc     = 0;
-        exec($cmd . ' 2>&1', $output, $rc);
-        return ['output' => implode("\n", $output), 'exit' => $rc];
+        $marker = '__PW_RC__';
+        $wrapped = "bash -lc " . escapeshellarg($cmd . '; printf "\\n' . $marker . '%s" "$?"');
+        $raw = @shell_exec($wrapped . ' 2>&1');
+
+        if (! is_string($raw) || $raw === '') {
+            return ['output' => '', 'exit' => 127];
+        }
+
+        $pos = strrpos($raw, $marker);
+        if ($pos === false) {
+            return ['output' => trim($raw), 'exit' => 0];
+        }
+
+        $output = trim(substr($raw, 0, $pos));
+        $codeRaw = trim(substr($raw, $pos + strlen($marker)));
+        $exit = is_numeric($codeRaw) ? (int) $codeRaw : 1;
+
+        return ['output' => $output, 'exit' => $exit];
+    }
+
+    private function getRemoteSnapshot(): ?array
+    {
+        if ($this->remoteSnapshot !== null) {
+            return $this->remoteSnapshot;
+        }
+
+        $script = '/home/pw_server155/tools/server_status_json.sh';
+        if (! is_file($script)) {
+            return null;
+        }
+
+        $r = $this->sh('sudo -n ' . escapeshellarg($script));
+        if (($r['exit'] ?? 1) !== 0) {
+            return null;
+        }
+
+        $json = trim((string) ($r['output'] ?? ''));
+        if ($json === '') {
+            return null;
+        }
+
+        $decoded = json_decode($json, true);
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $this->remoteSnapshot = $decoded;
+        return $this->remoteSnapshot;
     }
 
     /** Read static + dynamic server specs. */
     private function serverInfo(): array
     {
+        $remote = $this->getRemoteSnapshot();
+        if (is_array($remote) && isset($remote['serverInfo']) && is_array($remote['serverInfo'])) {
+            $info = $remote['serverInfo'];
+            return [
+                'cpuModel'  => (string) ($info['cpuModel'] ?? ''),
+                'cpuCores'  => (int) ($info['cpuCores'] ?? 0),
+                'os'        => (string) ($info['os'] ?? ''),
+                'uptime'    => (string) ($info['uptime'] ?? ''),
+                'hostname'  => (string) ($info['hostname'] ?? env('PW_SERVER_IP', 'game-backend')),
+                'diskTotal' => (string) ($info['diskTotal'] ?? '-'),
+                'diskUsed'  => (string) ($info['diskUsed'] ?? '-'),
+                'diskPct'   => (int) ($info['diskPct'] ?? 0),
+                'load1'     => (string) ($info['load1'] ?? '0'),
+                'load5'     => (string) ($info['load5'] ?? '0'),
+                'load15'    => (string) ($info['load15'] ?? '0'),
+            ];
+        }
+
         $cpuModel  = trim(@shell_exec("cat /proc/cpuinfo 2>/dev/null | grep 'model name' | head -1 | cut -d: -f2") ?? '');
         $cpuCores  = (int) trim(@shell_exec('nproc 2>/dev/null') ?? '0');
         $os        = trim(@shell_exec("cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"'") ?? '');
@@ -76,6 +140,18 @@ class ServerControlController extends Controller
         $maps          = [];
         $backupRunning = false;
 
+        $remote = $this->getRemoteSnapshot();
+        if (is_array($remote) && isset($remote['daemons']) && is_array($remote['daemons'])) {
+            foreach ($daemons as $key => $meta) {
+                $daemons[$key]['count'] = (int) ($remote['daemons'][$key] ?? 0);
+            }
+
+            $maps = is_array($remote['maps'] ?? null) ? $remote['maps'] : [];
+            $backupRunning = (bool) ($remote['backupRunning'] ?? false);
+
+            return compact('daemons', 'maps', 'backupRunning');
+        }
+
         $output = @shell_exec('ps -A w 2>/dev/null');
         if (! $output) return compact('daemons', 'maps', 'backupRunning');
 
@@ -110,6 +186,18 @@ class ServerControlController extends Controller
     /** Read memory info from `free -m`. */
     private function memoryInfo(): array
     {
+        $remote = $this->getRemoteSnapshot();
+        if (is_array($remote) && isset($remote['memory']) && is_array($remote['memory'])) {
+            return [
+                'ram_total' => (int) ($remote['memory']['ram_total'] ?? 0),
+                'ram_used'  => (int) ($remote['memory']['ram_used'] ?? 0),
+                'ram_buff'  => (int) ($remote['memory']['ram_buff'] ?? 0),
+                'ram_avail' => (int) ($remote['memory']['ram_avail'] ?? 0),
+                'swp_total' => (int) ($remote['memory']['swp_total'] ?? 0),
+                'swp_used'  => (int) ($remote['memory']['swp_used'] ?? 0),
+            ];
+        }
+
         $output = @shell_exec('free -m 2>/dev/null');
         if (! $output) return ['ram_total'=>0,'ram_used'=>0,'ram_buff'=>0,'ram_avail'=>0,'swp_total'=>0,'swp_used'=>0];
 

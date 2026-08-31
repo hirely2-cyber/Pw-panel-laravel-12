@@ -16,6 +16,26 @@ use Illuminate\Support\Facades\Log;
 
 class GameServerService
 {
+    private static function remoteSnapshot(): ?array
+    {
+        $cacheKey = 'pw.server.remote_snapshot';
+
+        return Cache::remember($cacheKey, 10, function () {
+            $script = '/home/pw_server155/tools/server_status_json.sh';
+            if (! is_file($script)) {
+                return null;
+            }
+
+            $raw = @shell_exec('sudo -n ' . escapeshellarg($script) . ' 2>/dev/null');
+            if (! is_string($raw) || trim($raw) === '') {
+                return null;
+            }
+
+            $decoded = json_decode(trim($raw), true);
+            return is_array($decoded) ? $decoded : null;
+        });
+    }
+
     /**
      * Check if the PW game server is online by attempting a TCP connection
      * to the client port (PW_PORT_CLIENT, default 29000).
@@ -51,6 +71,18 @@ class GameServerService
     {
         return Cache::remember('pw.server.uptime', 30, function () {
             try {
+                $snapshot = self::remoteSnapshot();
+                if (is_array($snapshot)) {
+                    $sec = (int) ($snapshot['serverInfo']['uptimeSec'] ?? 0);
+                    if ($sec > 0) {
+                        return $sec;
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::debug("GameServerService::uptime remote snapshot failed: {$e->getMessage()}");
+            }
+
+            try {
                 // Get elapsed time of glinkd in seconds (etimes format)
                 $output = shell_exec("ps -C glinkd -o etimes= 2>/dev/null");
                 if ($output) {
@@ -79,6 +111,16 @@ class GameServerService
     public static function onlineCount(): int
     {
         return (int) Cache::remember('pw.server.online_count', 30, function () {
+            try {
+                // Prefer pwAdmin API through tunnel for accuracy on split-VPS setup.
+                $players = self::onlinePlayers();
+                if (is_array($players)) {
+                    return max(0, count($players));
+                }
+            } catch (\Throwable $e) {
+                Log::debug("GameServerService::onlineCount onlinePlayers fallback: {$e->getMessage()}");
+            }
+
             try {
                 $clientPort = (int) config('pw-api.ports.client', 29000);
                 $glinkdCount = (int) env('PW_GLINKD_COUNT', 7);
@@ -201,6 +243,17 @@ class GameServerService
     public static function runningMaps(): array
     {
         return Cache::remember('pw.server.maps', 30, function () {
+            try {
+                $snapshot = self::remoteSnapshot();
+                if (is_array($snapshot) && is_array($snapshot['maps'] ?? null)) {
+                    $maps = array_keys($snapshot['maps']);
+                    sort($maps);
+                    return $maps;
+                }
+            } catch (\Throwable $e) {
+                Log::debug("GameServerService::runningMaps remote snapshot failed: {$e->getMessage()}");
+            }
+
             $maps = [];
             $output = @shell_exec('ps -A w 2>/dev/null');
             if (! $output) return $maps;
@@ -259,5 +312,6 @@ class GameServerService
         Cache::forget('pw.server.account_count');
         Cache::forget('pw.server.maps');
         Cache::forget('pw.server.online_players');
+        Cache::forget('pw.server.remote_snapshot');
     }
 }

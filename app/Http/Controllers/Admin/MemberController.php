@@ -19,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
@@ -86,13 +87,8 @@ class MemberController extends Controller
             // gamedbd might be offline
         }
 
-        // Real-time Cubi balance from gamedbd
-        $cubiData = null;
-        try {
-            $cubiData = (new GameDbService())->getUserCash($user->ID);
-        } catch (\Throwable $e) {
-            // gamedbd might be offline
-        }
+        $probeRoleId = (int) ($characters->first()->role_id ?? 0);
+        $cubiData = $this->resolveCubiData($user->ID, $probeRoleId > 0 ? $probeRoleId : null);
 
         return view('admin.members.show', compact('user', 'characters', 'rolesData', 'cubiData'));
     }
@@ -257,13 +253,7 @@ class MemberController extends Controller
             // gamedbd offline
         }
 
-        // Real-time Cubi balance
-        $cubiData = null;
-        try {
-            $cubiData = (new GameDbService())->getUserCash($user->ID);
-        } catch (\Throwable $e) {
-            // gamedbd offline
-        }
+        $cubiData = $this->resolveCubiData($user->ID, $roleId);
 
         // Build item name lookup for this character items
         $itemNames = [];
@@ -294,85 +284,136 @@ class MemberController extends Controller
 
     public function saveCharacter(Request $request, User $user, int $roleId): RedirectResponse
     {
-        // Verify character belongs to user
         $characters = $user->gameCharacters();
         $character = $characters->firstWhere('role_id', $roleId);
-        if (!$character) {
+        if (! $character) {
             abort(404, 'Character not found.');
         }
 
-        // Block saving if character is online
         if ($user->isOnline()) {
             return back()->with('error', 'Character harus offline untuk dimodifikasi. Kick dulu dari server.');
         }
 
+        $validated = $request->validate([
+            'world' => ['required', 'integer', 'min:0'],
+            'pos_x' => ['required', 'numeric'],
+            'pos_z' => ['required', 'numeric'],
+            'pos_y' => ['required', 'numeric'],
+            'reputation' => ['required', 'integer', 'min:0', 'max:2147483647'],
+            'exp' => ['required', 'integer', 'min:0', 'max:2147483647'],
+            'sp' => ['required', 'integer', 'min:0', 'max:2147483647'],
+            'cultivation' => ['required', 'integer', 'in:0,1,2,3,4,5,6,7,8,20,21,22,30,31,32'],
+            'vigor' => ['required', 'integer', 'in:0,99,199,299,399'],
+            'pocket_money' => ['required', 'integer', 'min:0', 'max:200000000'],
+            'store_money' => ['required', 'integer', 'min:0', 'max:200000000'],
+        ]);
+
         $gameDb = new GameDbService();
-        $errors = [];
-
-        // 1. Update status fields + Vigor (max_ap) via PutRoleStatus — same set as pwAdmin role.jsp
-        $statusChanges = [];
-        $statusFields = ['world', 'pos_x', 'pos_z', 'pos_y', 'reputation', 'exp', 'sp', 'cultivation'];
-        foreach ($statusFields as $field) {
-            if ($request->filled($field)) {
-                $statusChanges[$field] = $request->input($field);
-            }
+        Cache::forget("pw.role.{$roleId}");
+        $before = $gameDb->getRoleData($roleId);
+        if (! $before) {
+            return back()->with('error', 'Gagal mengambil data karakter dari game server.');
         }
 
-        $vigorVal = null;
-        if ($request->has('vigor')) {
-            $vigorVal = (int) $request->input('vigor');
-            if (!in_array($vigorVal, [0, 99, 199, 299, 399], true)) {
-                $errors[] = 'Vigor Points tidak valid (000, 099, 199, 299, atau 399).';
-            }
+        $beforeStatus = $before['status'] ?? [];
+        $beforeProp = $beforeStatus['property'] ?? [];
+        $beforePocket = (int) ($before['pocket']['money'] ?? 0);
+        $beforeStore = (int) ($before['storehouse']['money'] ?? 0);
+
+        $target = [
+            'world' => (int) $validated['world'],
+            'pos_x' => (float) $validated['pos_x'],
+            'pos_z' => (float) $validated['pos_z'],
+            'pos_y' => (float) $validated['pos_y'],
+            'reputation' => (int) $validated['reputation'],
+            'exp' => (int) $validated['exp'],
+            'sp' => (int) $validated['sp'],
+            'cultivation' => (int) $validated['cultivation'],
+            'vigor' => (int) $validated['vigor'],
+            'pocketcoins' => (int) $validated['pocket_money'],
+            'storehousecoins' => (int) $validated['store_money'],
+        ];
+
+        $isFloatChanged = static fn (float $a, float $b): bool => abs($a - $b) > 0.0001;
+        $payload = [];
+
+        // Only add fields that actually changed
+        if ($target['world'] !== (int) ($beforeStatus['world_tag'] ?? 0)) {
+            $payload['world'] = $target['world'];
+        }
+        if ($isFloatChanged($target['pos_x'], (float) ($beforeStatus['pos_x'] ?? 0))) {
+            $payload['coordinateX'] = $target['pos_x'];
+        }
+        if ($isFloatChanged($target['pos_z'], (float) ($beforeStatus['pos_z'] ?? 0))) {
+            $payload['coordinateZ'] = $target['pos_z'];
+        }
+        if ($isFloatChanged($target['pos_y'], (float) ($beforeStatus['pos_y'] ?? 0))) {
+            $payload['coordinateY'] = $target['pos_y'];
+        }
+        if ($target['reputation'] !== (int) ($beforeStatus['reputation'] ?? 0)) {
+            $payload['reputation'] = $target['reputation'];
+        }
+        if ($target['exp'] !== (int) ($beforeStatus['exp'] ?? 0)) {
+            $payload['exp'] = $target['exp'];
+        }
+        if ($target['sp'] !== (int) ($beforeStatus['sp'] ?? 0)) {
+            $payload['sp'] = $target['sp'];
+        }
+        if ($target['cultivation'] !== (int) ($beforeStatus['cultivation'] ?? 0)) {
+            $payload['cultivation'] = $target['cultivation'];
+        }
+        if ($target['vigor'] !== (int) ($beforeProp['max_ap'] ?? 0)) {
+            $payload['vigor'] = $target['vigor'];
+        }
+        if ($target['pocketcoins'] !== $beforePocket) {
+            $payload['pocketcoins'] = $target['pocketcoins'];
+        }
+        if ($target['storehousecoins'] !== $beforeStore) {
+            $payload['storehousecoins'] = $target['storehousecoins'];
         }
 
-        $needStatusPut = !empty($statusChanges) || ($vigorVal !== null && in_array($vigorVal, [0, 99, 199, 299, 399], true));
-
-        if ($needStatusPut && empty($errors)) {
-            try {
-                Cache::forget("pw.role.{$roleId}");
-                $roleData = $gameDb->getRoleData($roleId);
-                $rawStatus = $roleData['_raw_status'] ?? null;
-
-                if (!$rawStatus) {
-                    $errors[] = 'Gagal membaca raw status data.';
-                } else {
-                    $patched = $gameDb->applyStatusFieldPatches($rawStatus, $statusChanges);
-                    if ($vigorVal !== null && in_array($vigorVal, [0, 99, 199, 299, 399], true)) {
-                        $vPatched = $gameDb->patchVigorInRawStatus($patched, $vigorVal);
-                        if ($vPatched === null) {
-                            $errors[] = 'Gagal menerapkan Vigor (property / max_ap).';
-                        } else {
-                            $patched = $vPatched;
-                        }
-                    }
-                    if (empty($errors) && !$gameDb->putRoleStatusData($roleId, $patched)) {
-                        $errors[] = 'PutRoleStatus gagal.';
-                    }
-                }
-            } catch (\Throwable $e) {
-                $errors[] = 'Status error: ' . $e->getMessage();
-            }
+        if (empty($payload)) {
+            return back()->with('success', 'Tidak ada perubahan data untuk disimpan.');
         }
 
-        // 2. Update money via DBModifyRoleData
-        $pocketMoney = $request->filled('pocket_money') ? (int) $request->input('pocket_money') : null;
-        $storeMoney = $request->filled('store_money') ? (int) $request->input('store_money') : null;
+        [$ok, $saveError] = $this->saveRoleViaTomcat($roleId, $payload);
 
-        if ($pocketMoney !== null || $storeMoney !== null) {
-            try {
-                $ok = $gameDb->modifyRoleMoney($roleId, $pocketMoney, $storeMoney);
-                if (!$ok) $errors[] = 'ModifyRoleMoney gagal.';
-            } catch (\Throwable $e) {
-                $errors[] = 'Money error: ' . $e->getMessage();
-            }
+        if (! $ok) {
+            return back()->with('error', $saveError ?? 'Tomcat menolak save character.');
         }
 
-        if (empty($errors)) {
-            return back()->with('success', 'Character data berhasil disimpan.');
-        } else {
-            return back()->with('error', implode(' | ', $errors));
+        Cache::forget("pw.role.{$roleId}");
+        $after = $gameDb->getRoleData($roleId);
+        if (! $after) {
+            return back()->with('error', 'Save terkirim, tapi verifikasi gagal baca data terbaru.');
         }
+
+        $afterStatus = $after['status'] ?? [];
+        $afterProp = $afterStatus['property'] ?? [];
+        $afterPocket = (int) ($after['pocket']['money'] ?? 0);
+        $afterStore = (int) ($after['storehouse']['money'] ?? 0);
+
+        // Verify that changes were applied (only check fields that were sent)
+        $isFloatChanged = static fn (float $a, float $b): bool => abs($a - $b) > 0.0001;
+        $notApplied = [];
+
+        if (isset($payload['world']) && $target['world'] !== (int) ($afterStatus['world_tag'] ?? 0)) $notApplied[] = 'world';
+        if (isset($payload['coordinateX']) && $isFloatChanged($target['pos_x'], (float) ($afterStatus['pos_x'] ?? 0))) $notApplied[] = 'coordinateX';
+        if (isset($payload['coordinateZ']) && $isFloatChanged($target['pos_z'], (float) ($afterStatus['pos_z'] ?? 0))) $notApplied[] = 'coordinateZ';
+        if (isset($payload['coordinateY']) && $isFloatChanged($target['pos_y'], (float) ($afterStatus['pos_y'] ?? 0))) $notApplied[] = 'coordinateY';
+        if (isset($payload['reputation']) && $target['reputation'] !== (int) ($afterStatus['reputation'] ?? 0)) $notApplied[] = 'reputation';
+        if (isset($payload['exp']) && $target['exp'] !== (int) ($afterStatus['exp'] ?? 0)) $notApplied[] = 'exp';
+        if (isset($payload['sp']) && $target['sp'] !== (int) ($afterStatus['sp'] ?? 0)) $notApplied[] = 'sp';
+        if (isset($payload['cultivation']) && $target['cultivation'] !== (int) ($afterStatus['cultivation'] ?? 0)) $notApplied[] = 'cultivation';
+        if (isset($payload['vigor']) && $target['vigor'] !== (int) ($afterProp['max_ap'] ?? 0)) $notApplied[] = 'vigor';
+        if (isset($payload['pocketcoins']) && $target['pocketcoins'] !== $afterPocket) $notApplied[] = 'pocketcoins';
+        if (isset($payload['storehousecoins']) && $target['storehousecoins'] !== $afterStore) $notApplied[] = 'storehousecoins';
+
+        if (! empty($notApplied)) {
+            return back()->with('error', 'Save dikirim, tapi data belum berubah pada: ' . implode(', ', $notApplied) . '.');
+        }
+
+        return back()->with('success', 'Character data berhasil disimpan.');
     }
 
     public function saveRoleXml(Request $request, User $user, int $roleId): RedirectResponse
@@ -420,5 +461,219 @@ class MemberController extends Controller
 
         return redirect($url)
             ->with('success', 'Role XML tersimpan (Tomcat: XmlRole.putRoleToDB).');
+    }
+
+    private function getTomcatSession(): ?string
+    {
+        $tomcatBase = rtrim((string) config('pw-api.pwadmin_url', 'http://127.0.0.1:8080/pwAdmin/'), '/');
+        $username = (string) config('pw-api.pwadmin_user', 'admin');
+        $password = (string) config('pw-api.pwadmin_pass', '');
+
+        if ($username === '') {
+            return null;
+        }
+
+        // PWAdmin login endpoint: POST to index.jsp?page=login with user, key, captcha (6+7=13)
+        $loginUrl = $tomcatBase . '/index.jsp?page=login';
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $loginUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 20,
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query([
+                'user' => $username,
+                'key' => $password,
+                'captcha' => '13',  // Answer to "What is 6 + 7?"
+            ]),
+            CURLOPT_HEADER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (PWPanel/2.0)',
+        ]);
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        if (! is_string($response) || $response === '') {
+            return null;
+        }
+
+        // Extract JSESSIONID from Set-Cookie header
+        if (preg_match('/Set-Cookie:\s*JSESSIONID=([^;\s]+)/i', $response, $m) === 1) {
+            return $m[1];
+        }
+
+        // Fallback: check if it's in the response body (shouldn't be, but just in case)
+        if (preg_match('/JSESSIONID=([^;\s]+)/i', $response, $m) === 1) {
+            return $m[1];
+        }
+
+        return null;
+    }
+
+    private function saveRoleViaTomcat(int $roleId, array $payload): array
+    {
+        // Use custom JSP API endpoint with token (no session login required)
+        $tomcatUrl = rtrim((string) config('pw-api.pwadmin_url', 'http://127.0.0.1:8080/pwAdmin/'), '/');
+        $token = (string) config('pw-api.pwadmin_api_token', 'pw_panel_sync_2026');
+        $saveUrl = $tomcatUrl . '/api_role_save.jsp';
+
+        $postData = array_merge(['token' => $token, 'ident' => $roleId], $payload);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $saveUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query($postData),
+        ]);
+
+        $body = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError !== '') {
+            return [false, 'Koneksi ke pwAdmin gagal: ' . $curlError];
+        }
+
+        $body = is_string($body) ? trim($body) : '';
+        $data = json_decode($body, true);
+
+        if (! is_array($data)) {
+            return [false, "Response pwAdmin tidak valid (HTTP {$httpCode})."];
+        }
+
+        if (empty($data['ok'])) {
+            $msg = $data['message'] ?? 'pwAdmin menolak save.';
+            return [false, 'pwAdmin error: ' . $msg];
+        }
+
+        return [true, null];
+    }
+
+    /**
+     * Resolve Cubi data for display.
+     *
+     * Preferred source is live GetUser (gamedbd). If the live value is clearly
+     * inconsistent on split-VPS setups, fallback to legacy aggregates from
+     * mysql_game tables to match old panel behavior.
+     */
+    private function resolveCubiData(int $userId, ?int $roleId = null): ?array
+    {
+        // 1) Preferred source: pwAdmin Java API (same source as role.jsp realtime)
+        try {
+            $base = rtrim((string) config('pw-api.pwadmin_url', 'http://127.0.0.1:8080/pwAdmin/'), '/');
+            $token = (string) config('pw-api.pwadmin_api_token', 'pw_panel_sync_2026');
+            $query = [
+                'token' => $token,
+            ];
+            if ($roleId !== null && $roleId > 0) {
+                $query['ident'] = (string) $roleId;
+            } else {
+                $query['userid'] = (string) $userId;
+            }
+
+            $res = Http::timeout(10)->get($base . '/api_user_cash.jsp', $query);
+            if ($res->ok()) {
+                $json = $res->json();
+                if (is_array($json) && ($json['ok'] ?? false)) {
+                    $cashAdd = (int) ($json['cash_add'] ?? 0);
+                    $cashBuy = (int) ($json['cash_buy'] ?? 0);
+                    $cashSell = (int) ($json['cash_sell'] ?? 0);
+                    $cashUsed = (int) ($json['cash_used'] ?? 0);
+                    $rawCash = (int) ($json['cash'] ?? 0);
+                    $derivedCash = max(0, $cashAdd + $cashBuy - $cashUsed - $cashSell);
+
+                    return [
+                        'logicuid' => (int) ($json['logicuid'] ?? 0),
+                        'cash' => $rawCash > 0 ? $rawCash : $derivedCash,
+                        'cash_add' => $cashAdd,
+                        'cash_buy' => $cashBuy,
+                        'cash_sell' => $cashSell,
+                        'cash_used' => $cashUsed,
+                        'source' => 'pwadmin_java',
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            // continue to fallback sources
+        }
+
+        // 2) Fallback source: direct GetUser from gamedbd
+        $live = null;
+        try {
+            $live = (new GameDbService())->getUserCash($userId);
+        } catch (\Throwable $e) {
+            $live = null;
+        }
+
+        $delivered = 0;
+        $pending = 0;
+        $spent = 0;
+
+        try {
+            $delivered = (int) DB::connection('mysql_game')
+                ->table('usecashlog')
+                ->where('userid', $userId)
+                ->where('status', 4)
+                ->sum('cash');
+        } catch (\Throwable $e) {
+            $delivered = 0;
+        }
+
+        try {
+            $pending = (int) DB::connection('mysql_game')
+                ->table('usecashnow')
+                ->where('userid', $userId)
+                ->sum('cash');
+        } catch (\Throwable $e) {
+            $pending = 0;
+        }
+
+        try {
+            $spent = (int) (DB::connection('mysql_game')
+                ->table('pw_top_sultan')
+                ->where('userid', $userId)
+                ->value('cash_used') ?? 0);
+        } catch (\Throwable $e) {
+            $spent = 0;
+        }
+
+        $legacyBalance = max(0, $delivered + $pending - $spent);
+
+        if (! is_array($live)) {
+            return [
+                'logicuid' => 0,
+                'cash' => $legacyBalance,
+                'cash_add' => $delivered,
+                'cash_buy' => 0,
+                'cash_sell' => 0,
+                'cash_used' => $spent,
+                'source' => 'legacy_logs',
+            ];
+        }
+
+        $liveCash = max(0, (int) ($live['cash'] ?? 0));
+        $looksAnomalous = $legacyBalance > 0
+            && ($liveCash <= 0 || $liveCash < (int) floor($legacyBalance * 0.5));
+
+        if ($looksAnomalous) {
+            $live['cash'] = $legacyBalance;
+            $live['cash_add'] = $delivered;
+            $live['cash_buy'] = 0;
+            $live['cash_sell'] = 0;
+            $live['cash_used'] = $spent;
+            $live['source'] = 'legacy_logs';
+
+            return $live;
+        }
+
+        $live['source'] = 'gamedbd';
+
+        return $live;
     }
 }

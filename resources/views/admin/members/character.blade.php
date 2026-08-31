@@ -137,7 +137,7 @@
 
         <div class="rl-section">Cubi</div>
         @if($cubiData)
-        <div class="rl-row"><span class="rl-key">Balance</span><span class="rl-val">{{ number_format(($cubiData['cash_add'] + $cubiData['cash_buy'] - $cubiData['cash_used'] - $cubiData['cash_sell']) / 100, 2) }}</span></div>
+        <div class="rl-row"><span class="rl-key">Balance</span><span class="rl-val">{{ number_format(($cubiData['cash'] ?? 0) / 100, 2) }}</span></div>
         <div class="rl-row"><span class="rl-key">Purchased</span><span class="rl-val">{{ number_format($cubiData['cash_add'] / 100, 2) }}</span></div>
         <div class="rl-row"><span class="rl-key">Bought</span><span class="rl-val">{{ number_format($cubiData['cash_buy'] / 100, 2) }}</span></div>
         <div class="rl-row"><span class="rl-key">Used</span><span class="rl-val">{{ number_format($cubiData['cash_used'] / 100, 2) }}</span></div>

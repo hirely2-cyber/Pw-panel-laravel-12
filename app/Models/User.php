@@ -306,7 +306,7 @@ class User extends Authenticatable
 
     public function gameCharacters(): \Illuminate\Support\Collection
     {
-        return Cache::remember('pw.user.characters.v9.' . $this->ID, 120, function () {
+        return Cache::remember('pw.user.characters.v10.' . $this->ID, 30, function () {
             $uid = (int) $this->ID;
             $gameDb = new GameDbService();
 
@@ -349,7 +349,9 @@ class User extends Authenticatable
                 continue;
             }
             if ((int) ($d['base']['userid'] ?? 0) === $uid) {
-                $out->push($this->mapGameRoleTableRow($r));
+                // Prefer realtime level/class/gender from gamedb binary blob
+                // (MySQL roles.role_level is only updated periodically by gamed).
+                $out->push($this->mapGameRoleTableRow($r, $d));
             }
         }
 
@@ -417,15 +419,19 @@ class User extends Authenticatable
         return $out;
     }
 
-    private function mapGameRoleTableRow(object $r): object
+    private function mapGameRoleTableRow(object $r, ?array $live = null): object
     {
+        $base = $live['base'] ?? [];
+        $status = $live['status'] ?? [];
+
         return (object) [
             'role_id'    => (int) $r->role_id,
-            'name'       => $r->role_name,
-            'level'      => (int) $r->role_level,
-            'class'      => self::CLASS_MAP[$r->role_occupation] ?? 'Unknown',
-            'class_id'   => (int) $r->role_occupation,
-            'gender'     => (int) $r->role_gender,
+            'name'       => $base['name'] ?? $r->role_name,
+            // Prefer realtime level from gamedb binary; fallback to MySQL column.
+            'level'      => (int) ($status['level'] ?? $r->role_level),
+            'class'      => self::CLASS_MAP[$base['cls'] ?? $r->role_occupation] ?? 'Unknown',
+            'class_id'   => (int) ($base['cls'] ?? $r->role_occupation),
+            'gender'     => (int) ($base['gender'] ?? $r->role_gender),
         ];
     }
 
