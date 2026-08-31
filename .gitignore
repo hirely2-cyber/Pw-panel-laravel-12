@@ -28,3 +28,4 @@ Thumbs.db
 /backups/
 AUTO_INSTALLER_GUIDE.md
 User Payment.txt
+storage/framework/views/*.php
