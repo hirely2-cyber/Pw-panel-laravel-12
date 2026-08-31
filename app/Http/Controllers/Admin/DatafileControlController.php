@@ -25,6 +25,43 @@ class DatafileControlController extends Controller
     private const DEFAULT_SCRIPT = '/home/pw_server155/tools/replace_datafile.sh';
     private const DEFAULT_NPCGEN_SCRIPT = '/home/pw_server155/tools/replace_npcgen.sh';
 
+    private function runCommand(string $cmd): array
+    {
+        if (function_exists('exec')) {
+            $output = [];
+            $exitCode = 0;
+            exec($cmd, $output, $exitCode);
+
+            return [
+                'output' => trim(implode("\n", $output)),
+                'exit' => (int) $exitCode,
+            ];
+        }
+
+        if (function_exists('shell_exec')) {
+            $marker = '__PW_RC__';
+            $wrapped = "bash -lc " . escapeshellarg($cmd . '; printf "\\n' . $marker . '%s" "$?"');
+            $raw = @shell_exec($wrapped . ' 2>&1');
+
+            if (! is_string($raw) || $raw === '') {
+                return ['output' => 'Command returned no output.', 'exit' => 127];
+            }
+
+            $pos = strrpos($raw, $marker);
+            if ($pos === false) {
+                return ['output' => trim($raw), 'exit' => 0];
+            }
+
+            $output = trim(substr($raw, 0, $pos));
+            $codeRaw = trim(substr($raw, $pos + strlen($marker)));
+            $exit = is_numeric($codeRaw) ? (int) $codeRaw : 1;
+
+            return ['output' => $output, 'exit' => $exit];
+        }
+
+        return ['output' => 'Both exec() and shell_exec() are disabled on this server.', 'exit' => 127];
+    }
+
     private function serverPath(): string
     {
         return (string) (Setting::get('server_path') ?: '/home/pw_server155');
@@ -126,7 +163,7 @@ class DatafileControlController extends Controller
         $panelArea = request()->routeIs('gm.*') ? 'gm' : 'admin';
 
         $cmd = sprintf(
-            'sudo %s %s %s %s %s 2>&1',
+            'sudo -n %s %s %s %s %s 2>&1',
             escapeshellarg($scriptPath),
             escapeshellarg($tempPath),
             escapeshellarg($targetFile),
@@ -134,11 +171,9 @@ class DatafileControlController extends Controller
             escapeshellarg($datafilePath)
         );
 
-        $output = [];
-        $exitCode = 0;
-        exec($cmd, $output, $exitCode);
-
-        $textOutput = trim(implode("\n", $output));
+        $result = $this->runCommand($cmd);
+        $textOutput = trim((string) ($result['output'] ?? ''));
+        $exitCode = (int) ($result['exit'] ?? 1);
         $status = $exitCode === 0 ? 'success' : 'failed';
 
         DatafileUpdateLog::create([
@@ -154,11 +189,11 @@ class DatafileControlController extends Controller
         ]);
 
         if ($exitCode !== 0) {
-            $msg = 'Replace gagal: ' . ($textOutput !== '' ? $textOutput : 'unknown error');
+            $msg = 'Gagal';
             return $this->uploadError($request, $msg);
         }
 
-        $okMessage = 'DATAFILE berhasil diganti. Lakukan restart game server sesuai SOP update.';
+        $okMessage = 'Sukses';
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'ok' => true,
@@ -198,18 +233,16 @@ class DatafileControlController extends Controller
         $panelArea = request()->routeIs('gm.*') ? 'gm' : 'admin';
 
         $cmd = sprintf(
-            'sudo %s %s %s %s 2>&1',
+            'sudo -n %s %s %s %s 2>&1',
             escapeshellarg($scriptPath),
             escapeshellarg($tempPath),
             escapeshellarg($actor),
             escapeshellarg($worldPath)
         );
 
-        $output = [];
-        $exitCode = 0;
-        exec($cmd, $output, $exitCode);
-
-        $textOutput = trim(implode("\n", $output));
+        $result = $this->runCommand($cmd);
+        $textOutput = trim((string) ($result['output'] ?? ''));
+        $exitCode = (int) ($result['exit'] ?? 1);
         $status = $exitCode === 0 ? 'success' : 'failed';
 
         DatafileUpdateLog::create([
@@ -225,11 +258,11 @@ class DatafileControlController extends Controller
         ]);
 
         if ($exitCode !== 0) {
-            $msg = 'Replace gagal: ' . ($textOutput !== '' ? $textOutput : 'unknown error');
+            $msg = 'Gagal';
             return $this->uploadError($request, $msg);
         }
 
-        $okMessage = 'npcgen.data (world) berhasil diganti. Restart server game diperlukan.';
+        $okMessage = 'Sukses';
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'ok' => true,

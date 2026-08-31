@@ -167,6 +167,14 @@
             </div>
             @elseif(($invoice->channel_type ?? '') === 'qris')
             {{-- QRIS: tampilkan QR --}}
+            @php
+                $qrisString = (string) data_get($invoice->payment_instruction, 'qris_string', '');
+                $qrisMerchantName = null;
+
+                if ($qrisString !== '' && preg_match('/59\d{2}(.+?)60\d{2}/', $qrisString, $m)) {
+                    $qrisMerchantName = trim($m[1]);
+                }
+            @endphp
             <div class="pw-qris-card__qr" id="payment-section">
                 @if($invoice->qris_url)
                     @php
@@ -174,8 +182,7 @@
                         $isInlineSvg = str_contains($qrisRaw, '<svg') || str_contains($qrisRaw, '<?xml');
                         $svgOnly     = '';
                         if ($isInlineSvg) {
-                            $xmlClose = '?' . '>';
-                            $svgOnly  = (string) preg_replace('/<\?xml[^' . $xmlClose . ']*' . $xmlClose . '\s*/i', '', $qrisRaw);
+                            $svgOnly  = (string) preg_replace('/<\?xml[^>]*>\s*/i', '', $qrisRaw);
                             $svgOnly  = trim($svgOnly);
                             $svgOnly  = (string) preg_replace('/(<svg\b[^>]*?)\s+width="[^"]*"/i', '$1', $svgOnly);
                             $svgOnly  = (string) preg_replace('/(<svg\b[^>]*?)\s+height="[^"]*"/i', '$1 width="100%" height="100%"', $svgOnly);
@@ -184,7 +191,12 @@
                     @if($isInlineSvg)
                         <div id="qris-img" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">{!! $svgOnly !!}</div>
                     @else
-                        <img src="{{ $invoice->qris_url }}" alt="QRIS Code" id="qris-img" style="width:100%;height:100%;object-fit:contain;">
+                        @php
+                            $qrisSrc = str_contains($invoice->qris_url, '?')
+                                ? $invoice->qris_url . '&inv=' . urlencode($invoice->invoice_number)
+                                : $invoice->qris_url . '?inv=' . urlencode($invoice->invoice_number);
+                        @endphp
+                        <img src="{{ $qrisSrc }}" alt="QRIS Code" id="qris-img" style="width:100%;height:100%;object-fit:contain;">
                     @endif
                 @else
                 <div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:2rem;color:var(--pw-text-muted);">
@@ -193,6 +205,11 @@
                 </div>
                 @endif
             </div>
+            @if($qrisMerchantName)
+            <div style="margin-top:.65rem;font-size:.72rem;color:var(--pw-text-muted);text-align:center;">
+                Merchant QRIS: <strong style="color:var(--pw-gold);">{{ $qrisMerchantName }}</strong>
+            </div>
+            @endif
 
             @else
             {{-- Non-QRIS: tampilkan info transfer --}}

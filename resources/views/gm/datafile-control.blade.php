@@ -439,13 +439,12 @@
             if (xhr.status >= 200 && xhr.status < 300 && payload && payload.ok) {
                 fill.style.width = '100%';
                 text.textContent = '100%';
-                showMsg(true, payload.message || 'Upload berhasil.');
+                showMsg(true, 'Sukses');
                 setTimeout(() => window.location.reload(), 900);
                 return;
             }
 
-            const err = payload?.message || payload?.error || 'Upload gagal. Silakan cek log server.';
-            showMsg(false, err);
+            showMsg(false, 'Gagal');
         };
 
         xhr.onerror = function () {
@@ -521,13 +520,12 @@
             if (xhr.status >= 200 && xhr.status < 300 && payload && payload.ok) {
                 fill.style.width = '100%';
                 text.textContent = '100%';
-                showMsg(true, payload.message || 'Upload berhasil.');
+                showMsg(true, 'Sukses');
                 setTimeout(() => window.location.reload(), 900);
                 return;
             }
 
-            const err = payload?.message || payload?.error || 'Upload gagal. Silakan cek log server.';
-            showMsg(false, err);
+            showMsg(false, 'Gagal');
         };
 
         xhr.onerror = function () {
